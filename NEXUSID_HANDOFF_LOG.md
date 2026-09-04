@@ -39,7 +39,7 @@ One entry per work session. Newest on top. This is the "what happened" ledger �
 - Git repo not yet pushed to GitHub (remote not created/added yet).
 - Vercel project not yet linked/deployed.
 **Anything the next session needs to know before continuing:**
-- Section 4's `nexus_players`/`nexus_tos`/etc. table rows still say "Supabase (shared instance w/ METAZONE)" — verify against whichever Supabase project this session actually wires up, and correct that row if it's now a dedicated NexusID project instead of a shared one.
+- Section 4's `nexus_players`/`nexus_tos`/etc. table rows still say "Supabase (dedicated NexusID project, ref `zghjdrqpnjxuozwrwbjq` — separate Supabase account from METAZONE)" — verify against whichever Supabase project this session actually wires up, and correct that row if it's now a dedicated NexusID project instead of a shared one.
 
 ---
 
@@ -120,7 +120,7 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 | Name | Type | Location/File | Purpose | Status |
 |---|---|---|---|---|
-| `nexus_players` | DB table | Supabase (shared instance w/ METAZONE) | Player identity registry | Defined in roadmap, not yet migrated |
+| `nexus_players` | DB table | Supabase (dedicated NexusID project, ref `zghjdrqpnjxuozwrwbjq` — separate Supabase account from METAZONE) | Player identity registry | Defined in roadmap, not yet migrated |
 | `nexus_tos` | DB table | Supabase | TO identity registry | Defined in roadmap, not yet migrated |
 | `nexus_participations` | DB table | Supabase | Tournament participation ledger | Defined in roadmap, not yet migrated |
 | `nexus_ign_links` | DB table | Supabase | IGN history linking (core anti-cycling feature) | Defined in roadmap, not yet migrated |
