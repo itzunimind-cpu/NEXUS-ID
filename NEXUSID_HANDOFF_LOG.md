@@ -110,7 +110,16 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
-*No changes logged yet since Roadmap v1 baseline schema (Section 5 of roadmap).*
+### 2026-09-04 — Infra: Git, Supabase, Vercel linked
+**Type:** Infra
+**What changed:**
+- Git repo initialized locally, pushed to GitHub: `https://github.com/itzunimind-cpu/NEXUS-ID` (main branch).
+- Supabase wired: dedicated NexusID project, URL `https://zghjdrqpnjxuozwrwbjq.supabase.co`, publishable key embedded client-side in `js/supabase-config.js` (safe to expose — relies on RLS).
+- Vercel project created: `mot-i-soft/nexus-id`, deployed to production at `https://nexus-id-omega.vercel.app`.
+**Why:** Bootstrap infra for the NexusID public website (plain HTML/CSS/JS, not a framework app) ahead of building actual pages/auth flows.
+**Migration/backward-compat notes:**
+- GitHub↔Vercel auto-deploy is NOT yet connected — Vercel's GitHub App lacks repo access on the `itzunimind-cpu` account. Until authorized (GitHub → Settings → Applications → Vercel → grant access to NEXUS-ID repo), deploys must be triggered manually via `vercel --prod` rather than happening automatically on push.
+- No RLS policies or tables exist yet on the new Supabase project — schema migration from the roadmap (Section 5) is still an open item (see Section 6).
 
 ---
 
