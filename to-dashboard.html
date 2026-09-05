@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — TO Dashboard</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+  body { font-family: 'Manrope', sans-serif; background-color: #F2EDE4; color: #1C1A14; -webkit-font-smoothing: antialiased; }
+  .font-display { font-family: 'Oswald', sans-serif; }
+  .font-mono { font-family: 'Lexend Deca', sans-serif; }
+  .btn-active:active { transform: scale(0.98); opacity: 0.9; }
+</style></head>
+<body>
+<div class="w-full min-h-screen flex flex-col bg-[#F2EDE4]">
+  <header class="shrink-0 pt-14 px-6 pb-6 border-b border-[#C9BFA8]/50 bg-[#F2EDE4]">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#C85E0A] flex items-center justify-center rounded"><span class="text-white font-bold text-lg leading-none">N</span></div>
+        <span class="font-display font-bold tracking-tighter text-xl uppercase italic text-[#0C0A07]">NexusID</span>
+      </div>
+      <button id="sign-out-btn" class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#6B6048] hover:text-[#1C1A14] px-3 py-2 rounded-lg bg-[#E8E1D5] border border-[#C9BFA8]/60">Sign Out</button>
+    </div>
+    <div id="profile-header" class="space-y-0.5">
+      <h2 id="org-name" class="text-lg font-display font-bold text-[#0C0A07] leading-tight">Loading…</h2>
+      <span id="to-id" class="font-mono text-[11px] font-bold tracking-widest text-[#6B6048] uppercase"></span>
+    </div>
+  </header>
+
+  <main class="flex-1 px-6 py-6 space-y-6">
+    <div class="p-5 rounded-2xl bg-[#E8E1D5] border border-[#C9BFA8]/60 space-y-3">
+      <div class="flex justify-between items-center py-2 border-b border-[#C9BFA8]/30">
+        <span class="text-xs text-[#6B6048]">In-Game Name</span>
+        <span id="profile-ign" class="text-xs text-[#1C1A14] font-medium"></span>
+      </div>
+      <div class="flex justify-between items-center py-2">
+        <span class="text-xs text-[#6B6048]">Registered</span>
+        <span id="profile-created" class="text-xs text-[#1C1A14] font-medium"></span>
+      </div>
+    </div>
+
+    <p class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest text-center">Full dashboard (tournaments, quick actions) is separate follow-up work — this confirms auth + registration end-to-end.</p>
+  </main>
+</div>
+
+<script type="module">
+  import { requireSession, fetchMyToProfile, signOut } from "/js/auth.js";
+
+  (async () => {
+    const session = await requireSession();
+    if (!session) return;
+    const profile = await fetchMyToProfile();
+    if (!profile) {
+      window.location.href = "/to-onboarding.html";
+      return;
+    }
+    document.getElementById("org-name").textContent = profile.organisation_name;
+    document.getElementById("to-id").textContent = profile.to_id;
+    document.getElementById("profile-ign").textContent = profile.to_ign;
+    document.getElementById("profile-created").textContent = new Date(profile.created_at).toLocaleDateString();
+  })();
+
+  document.getElementById("sign-out-btn").addEventListener("click", async () => {
+    await signOut();
+    window.location.href = "/to-login.html";
+  });
+</script>
+</body></html>
