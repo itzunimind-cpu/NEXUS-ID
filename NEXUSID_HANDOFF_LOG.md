@@ -26,28 +26,44 @@ One entry per work session. Newest on top. This is the "what happened" ledger �
 
 <!-- TEMPLATE ABOVE — ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
-### Session — 2026-09-05
-**Duration/scope:** Design system merge (NexusID structure + METAZONE colour/type) and registration-flow field specs.
-**Files touched:** `NEXUSID_DESIGN_HANDOFF.md` (new), all 6 files in `NEXUS -id design language/`, this file.
+### Session — 2026-09-05 (cont.) — Public landing page + player search/profile
+**Duration/scope:** Rebuilt the homepage into a real public landing page and added the first public, no-auth page in the product: player search + profile.
+**Files touched:** `index.html` (rebuilt), `player.html` (new).
 **What was done:**
-- Confirmed the 6 concept mockups in `NEXUS -id design language/` are structural/pattern reference only, not wireframes to copy — they're missing data entities the real pages need.
-- Wrote `NEXUSID_DESIGN_HANDOFF.md` defining the merged system: keep NexusID's layout/component structure, adopt METAZONE's colour palette and typography (parchment/forest-green/olive/orange, Oswald/Manrope/Lexend Deca) wholesale for brand coherence and because it fits NexusID's "record, not verification" framing better than the original dark-mode/glow treatment.
-- Recoloured and retypographed all 6 mockup files to the merged system — no dark theme remains anywhere in the folder (verified via grep for old hex values, Tailwind dark-theme utility classes, and old font families).
-- Fixed a scope-guardrail violation found in the original mockup copy: footer said "Verified Identity for Competitive Esports," which contradicts the OTP-only/non-KYC guardrail — changed to "Record Infrastructure for Competitive Esports."
-- Extended the ID format decision to add Team IDs (`TM-XXXXXXX`) — see Decision Log.
-- Captured field specs for all three registration flows (see below) — not yet built into schema or UI.
-**Registration flow field specs (as given by Moti, not yet reflected in schema):**
-- **Player (`NX-`)**: game, in-game name (IGN), in-game UID, real name (optional), team name, team ID → generates player Nexus ID.
-- **TO (`TO-`)**: TO in-game name, TO in-game UID, TO real name (optional), TO email (sourced from the TO's Supabase Auth session, not re-typed — see same-day Decision Log entry), organisation name, tournament name → generates TO ID.
-- **Team (`TM-`)**: enter member player Nexus IDs, team name → generates Team ID.
-**Auth model clarified same day:** Supabase Auth is TO-only. Authenticated TOs create Player IDs and Team IDs on players'/teams' behalf. Player and TO profile cards are public, no-auth-required pages. Players do not have their own Supabase Auth accounts in this phase.
+- Rebuilt `index.html` from a placeholder stub into a real landing page on the merged design system: hero copy (careful not to imply KYC/verification, per the roadmap guardrail), a live Supabase-backed stats strip (counts from `nexus_players`/`nexus_tos`/`nexus_tournaments`, honestly showing 0 since no real data exists yet), a "How It Works" explainer, and a TO login CTA. Dropped the old `css/style.css`/`js/main.js` scaffold — confirmed via grep that nothing else referenced them.
+- Explicit decision (Moti, this session): the root page stays a public page, not a login page — signup/login already live at their own paths (`to-signup.html`/`to-login.html`), so this doesn't change that split.
+- Added a live, debounced search box on the landing page: queries `nexus_players` (by `nx_id`) and `nexus_player_game_accounts` (by `in_game_name`) in parallel, merges results by player, and renders the compact "Unclaimed" red-dot indicator per the design handoff's compact-context spec (not the full profile-page chip).
+- Built `player.html` (new) as the public profile page search results link to: Nexus ID, real name (if set), Claimed/Unclaimed badge, linked in-game accounts (game/IGN/UID), and tournament history via the `nexus_player_tournament_summary` view joined against `nexus_tournaments` for names. No "Claim This Account" CTA included — the OTP claim flow is still deferred (per existing decision log entry), so an actionable claim button would be a dead end.
+- Live-browser-tested both pages against the live Supabase project (Chrome automation): empty-state search ("No matches"), not-found profile page, zero console errors on either.
 **What was NOT finished / left mid-flight:**
-- Full Supabase schema migration SQL still not written — these field specs need to become actual table columns (this is the next planned step).
-- `nexus_teams` table not yet added to Section 4's naming directory as a real table — flagged there as reserved/planned only.
-- Actual pages (profile, registration forms, TO dashboard, tournament editor) not yet rebuilt from scratch against the new design system — only the 6 reference mockups were updated.
+- Search and `player.html` only cover players (`NX-`) — TOs (`TO-`) and teams (`TM-`) have no public profile page yet and aren't included in search results.
+- The TO signup→login→onboarding→dashboard flow still has not been live-browser-tested — explicitly deferred again this session (Moti's call: "skip it, build first"), not fixed.
 **Anything the next session needs to know before continuing:**
-- Read `NEXUSID_DESIGN_HANDOFF.md` before styling anything — it's now the source of truth for colour/type tokens, separate from METAZONE's own handoff (which explains *why* those tokens exist but is not NexusID-specific).
-- The registration field specs above are raw from conversation, not yet validated against the roadmap's data-collection guardrail (Section 5: "collecting data beyond phone/email + gameplay stats?") — TO email and player/TO real names should be checked against that guardrail before schema is finalized, though real name is explicitly optional and email is already an established recovery-contact field, so this is likely fine, just worth a conscious pass.
+- `index.html` and `player.html` follow the same self-contained Tailwind CDN + Google Fonts pattern as the TO-side pages. There is no longer any reference anywhere in the repo to `css/style.css` or `js/main.js` — both files are now orphaned (not deleted, just unused; safe to remove if a future session wants to tidy up).
+- If TO or team search/profile pages get built later, reuse the same merge-by-search-source pattern in `index.html`'s search script rather than inventing a second search implementation.
+
+### Session — 2026-09-05
+**Duration/scope:** Full day, one continuous session — design system merge, schema design through applying it live, and building the first real feature (TO auth + registration).
+**Files touched:** `NEXUSID_DESIGN_HANDOFF.md` (new), all 6 files in `NEXUS -id design language/`, `supabase/migrations/0001_init_nexusid_schema.sql` (new), `js/auth.js` (new), `to-login.html`/`to-signup.html`/`to-onboarding.html`/`to-dashboard.html` (new), `index.html`, `.claude/settings.local.json` (new, gitignored), this file.
+**What was done (see Decision Log / Change Log for full reasoning on each):**
+- Merged NexusID's mockup structure with METAZONE's colour/typography system; recoloured all 6 reference mockups; fixed a "Verified Identity" copy violation.
+- Extended ID format to include `TM-` (teams); confirmed all three prefixes use 7-char random suffixes.
+- Worked through the actual data model with Moti: Supabase Auth is TO-only (TOs create players/teams on their behalf); player↔team is many-to-many by design; identity dedup is UID-based; a tournament has multiple matches, each with per-player placement/kills; NexusID stores raw match data only and does not compute standings — a separate future "points table" app owns that.
+- Drafted the full schema (`0001_init_nexusid_schema.sql`), self-reviewed it and fixed 5 real gaps (see Change Log) before applying it, corrected a stale/wrong Supabase project ref that had sat unverified since 2026-09-04, linked the Supabase CLI, and applied the migration to the live project (`jzqmscrmeywckzodgjre`).
+- Built the first real feature end-to-end: TO signup (password), login (password + OTP), onboarding (creates the `nexus_tos` row and generates the TO's `TO-` id), and a minimal dashboard — see Section 4 for the new files. Added a link from `index.html` so the flow is reachable.
+- Committed and pushed everything to `origin/main` (commit `d4dcfdf`).
+- Set up a local git hook (`.claude/settings.local.json`, gitignored, not shared via the repo) that runs an agent after every `git commit` in this project to check whether this handoff log needs updating — see Decision Log.
+**What was NOT finished / left mid-flight:**
+- The TO auth/registration flow was **not tested in a live browser** — the Chrome automation extension wasn't connected in this environment. It was traced by hand against the RLS policies and served correctly from a local static server, but nobody has actually clicked through signup → login → onboarding → dashboard yet.
+- Whether GitHub→Vercel auto-deploy is connected is unverified as of this push — as of the 2026-09-04 session it was not (manual `vercel --prod` was required). If the new pages don't appear on the live Vercel URL after this push, that's almost certainly why.
+- The full-featured TO dashboard (tournament list, quick actions, stats) from the reference mockup was **not** built — `to-dashboard.html` is a minimal stub that only proves the auth/registration loop works.
+- Player registration, team registration, and the public profile/scoreboard page (all flagged as priorities earlier) are still not built.
+- Two RLS ownership assumptions remain unconfirmed by Moti (only creating-TO can edit a player's identity/IGN/game-accounts; only a team's creating-TO can remove a member) — flagged in the schema's Change Log entry.
+- Whether duplicate-player delete-and-restart should be TO-self-service or admin-only is still an open decision (currently modeled as admin-only — no DELETE policy exists for TOs).
+**Anything the next session needs to know before continuing:**
+- Read `NEXUSID_DESIGN_HANDOFF.md` before styling anything, and `supabase/migrations/0001_init_nexusid_schema.sql` before touching schema — both are now source of truth, separate from METAZONE's own handoff (which explains *why* the tokens exist but isn't NexusID-specific).
+- The new local git hook only fires for commits made *by Claude Code* in this repo on this machine — it won't fire for commits Moti makes directly, and won't exist at all on a different machine (it's gitignored, personal-scope by choice).
+- First thing to check next session: did the auth flow actually work when Moti clicked through it, and did the Vercel deployment pick up the push.
 
 ### Session — 2026-09-04
 **Duration/scope:** Infra bootstrap — connecting Git, Supabase, and Vercel for the NexusID website.
@@ -81,6 +97,13 @@ Format: **Decision → Reasoning → Reversible?**
 ```
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
+
+### 2026-09-05 — Local git-commit hook to auto-check the handoff log
+**Decision:** Added `.claude/settings.local.json` (gitignored, personal to this machine) with a `PostToolUse`/`Bash` hook filtered to `git commit` commands. After every commit Claude Code makes in this repo, it spawns a Sonnet-5 agent that checks the commit's diff against this file's existing entries and adds a properly-sectioned entry if something session-worthy isn't already logged, or does nothing if it's already covered.
+**Reasoning:** Moti asked for automatic handoff updates on every commit. A plain shell git hook can't intelligently decide what's worth logging or write prose matching this file's style — that needs an LLM, which is what Claude Code's `agent`-type hook provides. Scoped to local settings (not the shared project settings) per Moti's choice, and to commits only (not pushes) since the commit is where the diff naturally lives.
+**Reversible?** Yes — it's a single gitignored file; delete it or edit via `/hooks` to change/disable.
+**Constraints/edge cases to hold going forward:** Only fires for commits Claude Code itself makes in this repo on this machine — it does not fire for commits Moti makes directly, and does not exist on any other machine since it's gitignored by design. Not live-fire-tested yet (would have required a throwaway test commit) — validated by JSON schema/structure check only; the next real commit is the first live test.
+**Supersedes:** N/A
 
 ### 2026-09-05 — 48-hour edit window on TO-submitted match/participation data; evidence upload planned for later
 **Decision:** A TO can edit a player's match/participation entry only within 48 hours of entering it. After that window, the entry is locked — no further edits to that player's history/data for that match. Enforced at the database level (RLS `UPDATE` policy checking `now() <= created_at + interval '48 hours'`), not just in the UI, so it can't be bypassed by calling the API directly. Separately (later phase, not this build pass): TOs will be prompted to attach evidence for a result — a screenshot upload and/or a stream/VOD link — as proof. This is a generalization of the existing VOD-verified vs. TO-reported trust-tier concept already in the tournament editor mockup (which has a "VOD Proof" link field): the future version pushes toward requiring or strongly encouraging evidence at entry time rather than it being an optional link.
@@ -185,6 +208,12 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 **Why:** Caught before this schema touched the live database — exactly the kind of gap that's cheap to fix now and expensive once real data and RLS assumptions are load-bearing.
 **Migration/backward-compat notes:** No live data affected (still unapplied). Docker wasn't available locally to test-apply against a local Postgres instance first, so this was a manual read-through rather than an executed test — worth a close look at Supabase's dashboard SQL editor logs on first real `db push` in case anything was missed.
 
+### 2026-09-05 — TO auth + registration flow built (first real feature)
+**Type:** New feature
+**What changed:** Built the actual TO signup/login/registration loop as real pages (not mockups): `to-signup.html` (email+password signup via Supabase Auth), `to-login.html` (password login, plus an OTP-based alternative), `to-onboarding.html` (the real "registration" step — inserts the `nexus_tos` row and shows the generated `TO-` id), and a minimal `to-dashboard.html` that displays the TO's profile and confirms the loop closes. Added `js/auth.js` as the shared Supabase Auth/DB helper module (`signUpTo`, `signInTo`, `signInWithOtp`, `verifyOtp`, `signOut`, `fetchMyToProfile`, `createToProfile`, `requireSession`). Added a link from `index.html` so the flow is reachable from the homepage.
+**Why:** First real feature built against the applied schema, to prove the auth model (TO-only Supabase Auth, email sourced from session not re-entered) and the schema's RLS policies actually work together end to end.
+**Migration/backward-compat notes:** Pages use the merged design system (parchment/Oswald/Manrope/Lexend Deca) self-contained per page (Tailwind CDN + Google Fonts), matching the pattern in `NEXUS -id design language/`, not the plain CSS approach in the original `css/style.css`. **Not verified in a live browser** — see this session's top-level entry in Section 1 for why.
+
 ### 2026-09-05 — Corrected stale Supabase project ref; CLI linked
 **Type:** Infra correction
 **What changed:** The Supabase project ref recorded since 2026-09-04 (`zghjdrqpnjxuozwrwbjq`) was wrong/stale — the 2026-09-04 session log entry itself had already flagged this as unverified ("verify against whichever Supabase project this session actually wires up"), but it was never corrected. Confirmed via `npx supabase projects list` after logging in: the actual live project is **`jzqmscrmeywckzodgjre`** (name "NEXUS-ID", region eu-west-1), which matches what's already hardcoded in `js/supabase-config.js`. Ran `npx supabase login --token ...` (user's own terminal, token never entered this session) and `npx supabase link --project-ref jzqmscrmeywckzodgjre` — the local repo is now CLI-linked to the correct project. All earlier references to `zghjdrqpnjxuozwrwbjq` in this file have been corrected in place (Section 3 and Section 4), except the original 2026-09-04 session log entry, which is left as-is per this file's append-only rule (it correctly recorded the ambiguity as unresolved at the time).
@@ -247,6 +276,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 | `nexus_player_tournament_summary` | DB view | Supabase | Aggregates a player's matches within one tournament (total kills, best placement, match count) for the profile timeline chip. Does **not** compute overall rank/points — that's a future external app's job | New, 2026-09-05. Not yet applied |
 | `generate_nexus_code(prefix)` | DB function | Supabase | Generates a random `PREFIX-XXXXXXX` code and sets it as the default for `nx_id`/`to_id`/`tm_id` columns | Applied 2026-09-05 to the live project (`jzqmscrmeywckzodgjre`) |
 | `private.current_to_id()` | DB function | Supabase | Security-definer helper resolving the calling TO's internal id from their auth session, used inside RLS policies | Applied 2026-09-05 to the live project (`jzqmscrmeywckzodgjre`) |
+| `js/auth.js` | JS module | Project root | Shared Supabase Auth/DB helpers: `signUpTo`, `signInTo`, `signInWithOtp`, `verifyOtp`, `signOut`, `getSession`, `requireSession`, `fetchMyToProfile`, `createToProfile` | Built 2026-09-05, not live-tested in browser |
+| `to-signup.html` | Page | Project root | TO account creation (email + password via Supabase Auth) | Built 2026-09-05, not live-tested |
+| `to-login.html` | Page | Project root | TO login — password or OTP, routes to onboarding or dashboard based on profile completeness | Built 2026-09-05, not live-tested |
+| `to-onboarding.html` | Page | Project root | The real TO registration step — inserts `nexus_tos`, generates and displays the `TO-` id | Built 2026-09-05, not live-tested |
+| `to-dashboard.html` | Page | Project root | Minimal stub confirming the auth/registration loop — **not** the full feature-rich dashboard from the reference mockup (tournament list, quick actions) | Built 2026-09-05 as a proof-of-loop stub only; full dashboard still not built |
+| `index.html` | Page | Project root | Public landing page — hero, live registry stats, live search (Nexus ID or IGN) over `nexus_players`/`nexus_player_game_accounts`, TO login CTA | Rebuilt 2026-09-05 from placeholder stub; live-tested in browser |
+| `player.html` | Page | Project root | Public player profile (no auth) — identity, claimed status, in-game accounts, tournament history via `nexus_player_tournament_summary`. Search-result destination from `index.html`. Covers players only, not TOs/teams | Built 2026-09-05; live-tested in browser |
 
 <!-- ADD NEW ROWS AS FUNCTIONS/TABLES/COMPONENTS ARE ACTUALLY BUILT -->
 
@@ -279,7 +315,12 @@ Living list — not a full backlog, just the things a next session should know a
 - [ ] Confirm the two RLS assumptions flagged in the 2026-09-05 Change Log entry (IGN/identity edit rights limited to creating TO; team-member removal limited to team's creating TO)
 - [ ] Resolve the open risk from the 2026-09-05 decision log: should duplicate-player delete-and-restart be TO-self-service or admin-only? (Currently modeled as admin-only — no DELETE RLS policy exists for TOs.)
 - [ ] Pilot tournament logistics — not yet locked
-- [ ] Demo build (Nexus ID public profile page UI) — not yet started
+- [x] Demo build (Nexus ID public profile page UI) — `player.html` built and live-tested 2026-09-05, players only
+- [ ] TO auth/registration flow (built 2026-09-05) needs live browser testing — click through signup → login → onboarding → dashboard and confirm each step actually works, especially whether Supabase requires email confirmation on signup. Explicitly skipped again this session (Moti: "skip it, build first").
+- [ ] Confirm whether GitHub→Vercel auto-deploy is now connected — unverified since the 2026-09-04 note that it wasn't; if the 2026-09-05 push doesn't show up live, this is why
+- [ ] Full-featured TO dashboard (tournament list, quick actions, stats) — only a minimal stub exists so far
+- [ ] TO (`TO-`) and team (`TM-`) public profile pages and search coverage — `index.html` search and `player.html` currently only cover players
+- [ ] Player registration and team registration pages — not yet built as real pages
 - [ ] Post-pilot pitch target: GodLike Esports' "GodLike Warriors" program (fan-appointed City Foreman/Campus Managers who run local grassroots tournaments and scout talent — strong ICP fit for TO-side adoption). Approach after one pilot tournament is fully logged, using it as proof artifact rather than a cold concept pitch. Unconfirmed whether Free Fire-specific Warriors exist vs. general/multi-title — verify before reaching out.
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->
