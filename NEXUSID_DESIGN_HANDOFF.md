@@ -45,9 +45,13 @@ Directly inherited from METAZONE (`METAZONE_DESIGN_HANDOFF.md`, Phase 3 — do n
 | Olive | `#4E7C2F` | Active/filled, non-primary | Section eyebrow headers, "Logged"/active status indicators, "All Verified" style reputation text |
 | Orange | `#C85E0A` | Rare — action or selection only | Logo square, active nav/tab underline, **Unclaimed** status chip, **Claim This Account** CTA (the one standout action on that screen), VOD-related badges/labels (mirrors METAZONE's own orange "VOD" link convention exactly) |
 
-**Error/danger:** warm-shifted red `#B3261E` — never the cool `#ef4444` red, which would fight the palette's warmth.
+**Error/danger:** warm-shifted red `#9B1C11` (corrected 2026-09-06 — this doc previously said `#B3261E`, which diverged from METAZONE's actual exported design-system token; see `NEXUSID_HANDOFF_LOG.md`, 2026-09-06 entries, for how the divergence was found) — never the cool `#ef4444` red, which would fight the palette's warmth.
 
 **What NOT to do:** no glow effects, no dark backgrounds anywhere in NexusID's UI, no neutral/cool greys for borders or dim text, no using orange for anything that isn't an action or a selected/VOD state.
+
+**Radii (added 2026-09-06):** `--radius-sm` 2px, `--radius-md` 3px, `--radius-lg` 4px — tight, near-square corners everywhere (cards, buttons, badges, modals, inputs). **Never pill-shaped, never large soft-rounded (12px+).** This wasn't specified anywhere in this doc before 2026-09-06, so most existing NexusID pages default to Tailwind's `rounded-xl`/`2xl`/`3xl` (12–24px) — that's now known to be wrong, not a stylistic choice; see `NEXUSID_HANDOFF_LOG.md` Open Threads for the retrofit status.
+
+**Icons (added 2026-09-06):** Iconify's Lucide set only (`<iconify-icon icon="lucide:...">`, CDN: `https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js`), monoline, no fill, no duotone. No raw text glyphs (e.g. `←`) or emoji as functional icons — the only exceptions are `✓`/`✕` as literal confirmation/close marks.
 
 ---
 
@@ -81,7 +85,7 @@ family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Le
 - **Secondary/utility buttons** (Edit Details, Save Draft, Manage Players): parchment card fill (`#E8E1D5`), tan border, body-dark text.
 - **The one orange CTA per screen**: reserved for the screen's single standout action (Claim This Account, Publish header button) — never more than one competing orange element per screen, or it stops meaning "selected/action."
 - **Unclaimed status chip**: orange, on the full profile page — this was already correct in the original concepts, kept as-is under the new palette.
-- **Unclaimed status in compact contexts** (search results, roster/team lists): a small red dot (`#B3261E`) instead of the full chip, added 2026-09-05. This is a deliberate second use of the warm-red token beyond error/danger states — it means "needs claiming / needs attention" in dense list contexts where a full chip doesn't fit. Keep these two visually distinct (dot vs. chip) so red doesn't get overloaded into meaning both "error" and "unclaimed" identically in the same view.
+- **Unclaimed status in compact contexts** (search results, roster/team lists): a small red dot (`#9B1C11` — corrected 2026-09-06, was `#B3261E`) instead of the full chip, added 2026-09-05. This is a deliberate second use of the warm-red token beyond error/danger states — it means "needs claiming / needs attention" in dense list contexts where a full chip doesn't fit. Keep these two visually distinct (dot vs. chip) so red doesn't get overloaded into meaning both "error" and "unclaimed" identically in the same view.
 
 ---
 
