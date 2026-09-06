@@ -1,64 +1,111 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Search the Registry</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
-  body { font-family: 'Manrope', sans-serif; background-color: #F2EDE4; color: #1C1A14; -webkit-font-smoothing: antialiased; }
-  .font-display { font-family: 'Oswald', sans-serif; }
-  .font-mono { font-family: 'Lexend Deca', sans-serif; }
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Search the Registry</title>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE4;
+    --bg-card: #EDE7DC;
+    --border: #C9BFA8;
+    --border-mid: #A89880;
+    --forest: #2C4A2E;
+    --orange: #C85E0A;
+    --red: #9B1C11;
+    --text-hero: #0C0A07;
+    --text-body: #1C1A14;
+    --text-dim: #6B6048;
+    --radius-md: 3px;
+    --radius-lg: 4px;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+    --font-mono: 'Lexend Deca', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text-body); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  a { text-decoration: none; }
+  input:focus { outline: none; border-color: var(--forest) !important; }
+  .search-input { width: 100%; padding: 12px 14px 12px 32px; background: var(--bg); color: var(--text-body); border: 1px solid var(--border-mid); border-radius: var(--radius-md); font-family: var(--font-body); font-size: 14px; transition: border-color .2s; }
+  .status-text { font-family: var(--font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-dim); margin: 0; padding-left: 4px; }
+  .result-card { display: block; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); transition: border-color .15s ease, box-shadow .15s ease; }
+  .result-card:hover { border-color: var(--border-mid); box-shadow: 0 4px 16px rgba(13,13,13,.08); }
 </style></head>
 <body>
-<div class="w-full min-h-screen flex flex-col bg-[#F2EDE4]">
+<div style="width:100%;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text-body);font-family:var(--font-body);">
 
-  <header class="shrink-0 pt-14 px-6 pb-4 bg-[#F2EDE4]">
-    <div class="flex items-center gap-3 mb-6">
-      <a href="/index.html" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#6B6048]">&larr;</a>
-      <a href="/index.html" class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-[#C85E0A] flex items-center justify-center rounded"><span class="text-white font-bold text-lg leading-none">N</span></div>
-        <span class="font-display font-bold tracking-tighter text-xl uppercase italic text-[#0C0A07]">NexusID</span>
-      </a>
-    </div>
-    <div class="space-y-1">
-      <h1 class="text-2xl font-display font-bold tracking-tight text-[#0C0A07]">Search the Registry</h1>
-      <p class="text-sm text-[#6B6048] font-medium tracking-wide">Find a player by Nexus ID or in-game name</p>
+  <header style="flex-shrink:0;padding:clamp(24px,4vw,40px) clamp(20px,6vw,72px) clamp(16px,2vw,20px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:480px;display:flex;flex-direction:column;gap:20px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/index.html" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);flex-shrink:0;">
+          <iconify-icon icon="lucide:arrow-left" style="font-size:15px;"></iconify-icon>
+        </a>
+        <a href="/index.html" style="display:flex;align-items:center;gap:10px;">
+          <div style="width:30px;height:30px;background:var(--orange);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-lg);flex-shrink:0;">
+            <iconify-icon icon="lucide:fingerprint" style="color:#fff;font-size:16px;"></iconify-icon>
+          </div>
+          <span style="font-family:var(--font-display);font-weight:600;letter-spacing:2px;font-size:19px;text-transform:uppercase;"><span style="color:var(--forest);">Nexus</span><span style="color:var(--orange);">ID</span></span>
+        </a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <h1 style="font-family:var(--font-display);font-weight:700;letter-spacing:-0.01em;font-size:clamp(1.5rem,2vw + 1.1rem,1.9rem);color:var(--text-hero);margin:0;">Search the Registry</h1>
+        <p style="font-size:13px;color:var(--text-dim);font-weight:500;margin:0;">Find a player by Nexus ID or in-game name</p>
+      </div>
     </div>
   </header>
 
-  <main class="flex-1 px-6 py-4">
+  <main style="flex:1;padding:clamp(8px,1vw,12px) clamp(20px,6vw,72px) clamp(32px,4vw,44px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;">
 
-    <section class="pb-6 space-y-3">
-      <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 focus-within:border-[#A89880] transition-colors">
-        <input type="text" id="search-input" placeholder="Search by Nexus ID or IGN" autocomplete="off" autofocus
-          class="w-full bg-transparent py-3.5 px-4 text-sm text-[#1C1A14] placeholder:text-[#6B6048]/50 outline-none">
+      <div style="position:relative;">
+        <iconify-icon icon="lucide:search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:15px;pointer-events:none;"></iconify-icon>
+        <input type="text" id="search-input" placeholder="Search by Nexus ID or IGN" autocomplete="off" autofocus class="search-input">
       </div>
-      <p id="search-hint" class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest pl-1">Type at least 2 characters</p>
-      <div id="search-results" class="space-y-2 hidden"></div>
-    </section>
 
+      <p id="search-hint" class="status-text">Type at least 2 characters</p>
+      <p id="search-loading" class="status-text" hidden>Searching…</p>
+      <p id="search-error" style="font-size:12px;color:var(--red);font-weight:500;margin:0;padding-left:4px;" hidden>Search failed. Try again.</p>
+      <p id="search-empty" style="font-size:12px;color:var(--text-dim);margin:0;padding-left:4px;" hidden></p>
+      <div id="search-results" style="display:flex;flex-direction:column;gap:8px;" hidden></div>
+
+    </div>
   </main>
-
-  <footer class="shrink-0 pb-[34px] px-6 pt-6 bg-[#F2EDE4] border-t border-[#C9BFA8]/50">
-    <p class="font-mono text-[10px] text-[#6B6048]/50 uppercase tracking-[0.2em] font-medium text-center">Registry Infrastructure for Grassroots Esports</p>
-  </footer>
 </div>
 
 <script type="module">
   import { supabase } from "/js/supabase-config.js";
 
   const searchInput = document.getElementById("search-input");
-  const searchHint = document.getElementById("search-hint");
-  const searchResults = document.getElementById("search-results");
+  const hintEl = document.getElementById("search-hint");
+  const loadingEl = document.getElementById("search-loading");
+  const errorEl = document.getElementById("search-error");
+  const emptyEl = document.getElementById("search-empty");
+  const resultsEl = document.getElementById("search-results");
   let debounceTimer;
 
-  function resultRow({ nx_id, real_name, claimed, matched_ign }) {
+  function setStatus(status, query) {
+    hintEl.hidden = status !== "idle";
+    loadingEl.hidden = status !== "loading";
+    errorEl.hidden = status !== "error";
+    emptyEl.hidden = status !== "empty";
+    resultsEl.hidden = status !== "results";
+    if (status === "empty") emptyEl.textContent = `No matches for "${query}".`;
+  }
+
+  function resultCard({ nx_id, real_name, claimed, matched_ign }) {
     const label = matched_ign || real_name || "";
-    const unclaimedDot = claimed
+    const unclaimed = claimed
       ? ""
-      : `<span class="w-1.5 h-1.5 rounded-full bg-[#B3261E]"></span><span class="font-mono text-[10px] font-bold text-[#B3261E] uppercase">Unclaimed</span>`;
+      : `<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding-top:2px;">
+           <span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:block;"></span>
+           <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--red);">Unclaimed</span>
+         </div>`;
     return `
-      <a href="/player.html?id=${encodeURIComponent(nx_id)}" class="block p-4 rounded-xl border border-[#C9BFA8]/30 bg-[#EDE7DC]/60 active:bg-[#E8E1D5] transition-colors">
-        <div class="flex justify-between items-start">
-          <div>
-            <h3 class="text-lg font-display font-bold text-[#0C0A07] leading-none mb-1">${nx_id}</h3>
-            ${label ? `<p class="text-xs text-[#6B6048] font-medium">${label}</p>` : ""}
+      <a href="/player.html?id=${encodeURIComponent(nx_id)}" class="result-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <h3 style="font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--text-hero);margin:0;line-height:1;">${nx_id}</h3>
+            ${label ? `<p style="font-size:12px;color:var(--text-dim);font-weight:500;margin:0;">${label}</p>` : ""}
           </div>
-          <div class="flex items-center gap-1">${unclaimedDot}</div>
+          ${unclaimed}
         </div>
       </a>`;
   }
@@ -71,6 +118,11 @@
         .ilike("in_game_name", `%${q}%`).limit(8),
     ]);
 
+    if (byId.error && byIgn.error) {
+      setStatus("error");
+      return;
+    }
+
     const merged = new Map();
     (byId.data || []).forEach((p) => merged.set(p.nx_id, { ...p }));
     (byIgn.data || []).forEach((row) => {
@@ -81,26 +133,23 @@
     });
 
     const results = Array.from(merged.values());
-    if (byId.error && byIgn.error) {
-      searchResults.innerHTML = `<p class="text-xs text-[#B3261E]">Search failed. Try again.</p>`;
-    } else if (results.length === 0) {
-      searchResults.innerHTML = `<p class="text-xs text-[#6B6048]">No matches for "${q}".</p>`;
+    if (results.length === 0) {
+      setStatus("empty", q);
     } else {
-      searchResults.innerHTML = results.map(resultRow).join("");
+      resultsEl.innerHTML = results.map(resultCard).join("");
+      setStatus("results");
     }
-    searchResults.classList.remove("hidden");
-    searchHint.classList.add("hidden");
   }
 
   searchInput.addEventListener("input", () => {
     clearTimeout(debounceTimer);
     const q = searchInput.value.trim();
     if (q.length < 2) {
-      searchResults.classList.add("hidden");
-      searchResults.innerHTML = "";
-      searchHint.classList.remove("hidden");
+      setStatus("idle");
+      resultsEl.innerHTML = "";
       return;
     }
+    setStatus("loading");
     debounceTimer = setTimeout(() => runSearch(q), 300);
   });
 </script>
