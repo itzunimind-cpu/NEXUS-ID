@@ -26,6 +26,24 @@ One entry per work session. Newest on top. This is the "what happened" ledger �
 
 <!-- TEMPLATE ABOVE — ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### Session — 2026-09-06 — Page flow restructuring (index → search / TO dashboard quick actions)
+**Duration/scope:** Restructured navigation per Moti's explicit flow spec, then investigated why the 2026-09-05 git-commit hook didn't update this file afterward.
+**Files touched:** `index.html`, `search.html` (new), `register.html` (new), `tournament-new.html` (new), `to-dashboard.html`, `player.html`, `js/auth.js`.
+**What was done:**
+- Rebuilt `index.html` down to two primary CTAs per Moti's spec: "Search for a Player" → `search.html`, "Sign Up / Login as TO" → `to-login.html`. Kept the stats strip and "How It Works" as supporting content; dropped the header's separate "TO Login" link and the old inline search box (both superseded by the two-button flow).
+- Built `search.html` (new): the debounced Nexus ID/IGN search moved wholesale off `index.html`. Updated `player.html`'s not-found back-link to point here instead of `index.html`.
+- Added the first two real "Quick Actions" to `to-dashboard.html` (previously a stub with zero actions): "Create Team / Player IDs" → `register.html`, "Create Tournament" → `tournament-new.html`.
+- Built `register.html` (new): two independent forms — create a Nexus ID (`nexus_players` + first `nexus_player_game_accounts` row) and create a Team (`nexus_teams`). Does not link a new player into a team in the same step — rosters (`nexus_team_members`) are still a separate, unbuilt action.
+- Built `tournament-new.html` (new): creates only the `nexus_tournaments` shell (name, game, format, dates, max players) — no roster/match/result editing (that's the much larger tournament-editor mockup, out of scope here).
+- Added `createPlayer`, `createTeam`, `createTournament` to `js/auth.js`, following the existing `fetchMyToProfile`-gated pattern.
+- Committed (`8c352e1`) and pushed to `origin/main`. Deliberately left the untracked `arbitary/bulk-export-*.zip` folder out of the commit — pre-existing, unrelated to this work.
+**What was NOT finished / left mid-flight:**
+- Not live-browser-tested — Chrome automation extension wasn't connected in this environment (same gap as the 2026-09-05 TO-flow build). Verified by hand-tracing the RLS/JS logic and confirming all pages return 200 from a local static server.
+- Team rosters (`nexus_team_members`) still have no UI.
+- `tournament-new.html` doesn't lead into the full editor (roster, per-match results, VOD proof) yet.
+**Anything the next session needs to know before continuing:**
+- The 2026-09-05 git-commit hook got its first real live-fire test on this session's commit (`8c352e1`) and **did not update this file** — this entry was written manually instead. See the Decision Log addendum below before assuming the hook works.
+
 ### Session — 2026-09-05 (cont.) — Public landing page + player search/profile
 **Duration/scope:** Rebuilt the homepage into a real public landing page and added the first public, no-auth page in the product: player search + profile.
 **Files touched:** `index.html` (rebuilt), `player.html` (new).
@@ -97,6 +115,14 @@ Format: **Decision → Reasoning → Reversible?**
 ```
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
+
+### 2026-09-06 — Git-commit handoff-log hook: first live test failed silently
+**Decision:** No new decision — this is a factual addendum to the 2026-09-05 entry below, so a future session doesn't assume the hook is working just because it's configured.
+**Reasoning:** N/A (observation, not a design choice).
+**Reversible?** N/A
+**What was observed:** The 2026-09-05 entry noted the hook was "not live-fire tested yet... the next real commit is the first live test." That commit happened this session (`8c352e1` — new pages, new `auth.js` functions, unambiguously session-worthy). Afterward, `NEXUSID_HANDOFF_LOG.md`'s last-touched commit remained `946cd70` (the prior session's commit) — no hook-authored edit appeared, staged or otherwise, and no hook agent was still running post-push. Separately, the hook *did* fire twice earlier the same session for two unrelated `curl` commands (its `matcher` is scoped to any `Bash` call, not literally `git commit` — the `if` field reads as a natural-language condition handed to the hook's own agent, not a strict pre-filter) and both times correctly concluded nothing needed logging. So the hook mechanism runs, but did not act on the one commit it actually mattered for.
+**Root cause:** Not yet diagnosed — flagged in Open Threads for next session.
+**Supersedes:** N/A — appended alongside the 2026-09-05 entry, not a reversal of it.
 
 ### 2026-09-05 — Local git-commit hook to auto-check the handoff log
 **Decision:** Added `.claude/settings.local.json` (gitignored, personal to this machine) with a `PostToolUse`/`Bash` hook filtered to `git commit` commands. After every commit Claude Code makes in this repo, it spawns a Sonnet-5 agent that checks the commit's diff against this file's existing entries and adds a properly-sectioned entry if something session-worthy isn't already logged, or does nothing if it's already covered.
@@ -196,6 +222,12 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-06 — Page flow restructuring: two-button landing, dedicated search page, first real dashboard quick actions
+**Type:** New feature / Navigation restructuring
+**What changed:** See Session Log entry above for full detail. Summary: `index.html` reduced to two primary CTAs (search / TO login); search UI extracted to new `search.html`; `to-dashboard.html` gained its first two real quick actions (`register.html`, `tournament-new.html`); `js/auth.js` gained `createPlayer`/`createTeam`/`createTournament`.
+**Why:** Moti's explicit flow spec: index → {search, TO login} → {onboarding/dashboard} → {create team/player IDs, create tournament}.
+**Migration/backward-compat notes:** No schema changes — all three new create-functions insert into tables/columns already present in the applied `0001_init_nexusid_schema.sql`. Not live-browser-tested (see Session Log).
+
 ### 2026-09-05 — Migration reviewed before applying: closed 5 real gaps
 **Type:** Schema (review pass, before first apply)
 **What changed:** Self-reviewed `0001_init_nexusid_schema.sql` before running `db push`. Found and fixed:
@@ -276,13 +308,16 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 | `nexus_player_tournament_summary` | DB view | Supabase | Aggregates a player's matches within one tournament (total kills, best placement, match count) for the profile timeline chip. Does **not** compute overall rank/points — that's a future external app's job | New, 2026-09-05. Not yet applied |
 | `generate_nexus_code(prefix)` | DB function | Supabase | Generates a random `PREFIX-XXXXXXX` code and sets it as the default for `nx_id`/`to_id`/`tm_id` columns | Applied 2026-09-05 to the live project (`jzqmscrmeywckzodgjre`) |
 | `private.current_to_id()` | DB function | Supabase | Security-definer helper resolving the calling TO's internal id from their auth session, used inside RLS policies | Applied 2026-09-05 to the live project (`jzqmscrmeywckzodgjre`) |
-| `js/auth.js` | JS module | Project root | Shared Supabase Auth/DB helpers: `signUpTo`, `signInTo`, `signInWithOtp`, `verifyOtp`, `signOut`, `getSession`, `requireSession`, `fetchMyToProfile`, `createToProfile` | Built 2026-09-05, not live-tested in browser |
+| `js/auth.js` | JS module | Project root | Shared Supabase Auth/DB helpers: `signUpTo`, `signInTo`, `signInWithOtp`, `verifyOtp`, `signOut`, `getSession`, `requireSession`, `fetchMyToProfile`, `createToProfile`, `createPlayer`, `createTeam`, `createTournament` | Base helpers built 2026-09-05; `createPlayer`/`createTeam`/`createTournament` added 2026-09-06. Not live-tested in browser |
 | `to-signup.html` | Page | Project root | TO account creation (email + password via Supabase Auth) | Built 2026-09-05, not live-tested |
 | `to-login.html` | Page | Project root | TO login — password or OTP, routes to onboarding or dashboard based on profile completeness | Built 2026-09-05, not live-tested |
 | `to-onboarding.html` | Page | Project root | The real TO registration step — inserts `nexus_tos`, generates and displays the `TO-` id | Built 2026-09-05, not live-tested |
-| `to-dashboard.html` | Page | Project root | Minimal stub confirming the auth/registration loop — **not** the full feature-rich dashboard from the reference mockup (tournament list, quick actions) | Built 2026-09-05 as a proof-of-loop stub only; full dashboard still not built |
-| `index.html` | Page | Project root | Public landing page — hero, live registry stats, live search (Nexus ID or IGN) over `nexus_players`/`nexus_player_game_accounts`, TO login CTA | Rebuilt 2026-09-05 from placeholder stub; live-tested in browser |
-| `player.html` | Page | Project root | Public player profile (no auth) — identity, claimed status, in-game accounts, tournament history via `nexus_player_tournament_summary`. Search-result destination from `index.html`. Covers players only, not TOs/teams | Built 2026-09-05; live-tested in browser |
+| `to-dashboard.html` | Page | Project root | TO dashboard — profile card plus two Quick Actions (`register.html`, `tournament-new.html`) added 2026-09-06. Still **not** the full feature-rich dashboard from the reference mockup (tournament list, stats) | Built 2026-09-05 as a proof-of-loop stub; Quick Actions added 2026-09-06; full dashboard (tournament list/stats) still not built |
+| `index.html` | Page | Project root | Public landing page — hero, live registry stats, "How It Works", and now just two primary CTAs (`search.html`, `to-login.html`). No longer has an inline search box | Rebuilt 2026-09-05 from placeholder stub; reduced to two-button flow 2026-09-06; not re-tested live since the 2026-09-06 change |
+| `search.html` | Page | Project root | Dedicated player search (Nexus ID or IGN) over `nexus_players`/`nexus_player_game_accounts` — moved off `index.html` | Built 2026-09-06, not live-tested |
+| `player.html` | Page | Project root | Public player profile (no auth) — identity, claimed status, in-game accounts, tournament history via `nexus_player_tournament_summary`. Search-result destination from `search.html` (was `index.html` before 2026-09-06). Covers players only, not TOs/teams | Built 2026-09-05; live-tested in browser at the time; back-link updated 2026-09-06, not re-tested live |
+| `register.html` | Page | Project root | TO-only: create a new Nexus ID (player + first game account) or a new Team. Does not build team rosters | Built 2026-09-06, not live-tested |
+| `tournament-new.html` | Page | Project root | TO-only: create a tournament shell (name/game/format/dates/max players). No roster/match/result editing yet | Built 2026-09-06, not live-tested |
 
 <!-- ADD NEW ROWS AS FUNCTIONS/TABLES/COMPONENTS ARE ACTUALLY BUILT -->
 
@@ -318,9 +353,11 @@ Living list — not a full backlog, just the things a next session should know a
 - [x] Demo build (Nexus ID public profile page UI) — `player.html` built and live-tested 2026-09-05, players only
 - [ ] TO auth/registration flow (built 2026-09-05) needs live browser testing — click through signup → login → onboarding → dashboard and confirm each step actually works, especially whether Supabase requires email confirmation on signup. Explicitly skipped again this session (Moti: "skip it, build first").
 - [ ] Confirm whether GitHub→Vercel auto-deploy is now connected — unverified since the 2026-09-04 note that it wasn't; if the 2026-09-05 push doesn't show up live, this is why
-- [ ] Full-featured TO dashboard (tournament list, quick actions, stats) — only a minimal stub exists so far
-- [ ] TO (`TO-`) and team (`TM-`) public profile pages and search coverage — `index.html` search and `player.html` currently only cover players
-- [ ] Player registration and team registration pages — not yet built as real pages
+- [ ] Full-featured TO dashboard (tournament list, stats) — Quick Actions (create player/team, create tournament) added 2026-09-06, but no tournament list/stats yet
+- [ ] TO (`TO-`) and team (`TM-`) public profile pages and search coverage — `search.html` (formerly `index.html`) and `player.html` currently only cover players
+- [x] Player registration and team registration pages — built 2026-09-06 as `register.html` (creates a Nexus ID + first game account, or a team). Still open: team rosters (`nexus_team_members`) have no UI, and there's no "add existing player to team" flow
+- [ ] Tournament creation page (`tournament-new.html`, built 2026-09-06) creates only the tournament shell — the full editor (roster, per-match results, VOD proof, publish/draft) from the reference mockup is still not built
+- [ ] Diagnose why the 2026-09-05 git-commit handoff-log hook didn't fire/act on commit `8c352e1` (2026-09-06) despite firing correctly as a no-op for unrelated `curl` commands earlier the same session — see the 2026-09-06 Decision Log addendum
 - [ ] Post-pilot pitch target: GodLike Esports' "GodLike Warriors" program (fan-appointed City Foreman/Campus Managers who run local grassroots tournaments and scout talent — strong ICP fit for TO-side adoption). Approach after one pilot tournament is fully logged, using it as proof artifact rather than a cold concept pitch. Unconfirmed whether Free Fire-specific Warriors exist vs. general/multi-title — verify before reaching out.
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->
