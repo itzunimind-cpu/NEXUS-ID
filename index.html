@@ -8,18 +8,15 @@
 <div class="w-full min-h-screen flex flex-col bg-[#F2EDE4]">
 
   <header class="shrink-0 pt-14 px-6 pb-2 bg-[#F2EDE4]">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-[#C85E0A] flex items-center justify-center rounded"><span class="text-white font-bold text-lg leading-none">N</span></div>
-        <span class="font-display font-bold tracking-tighter text-xl uppercase italic text-[#0C0A07]">NexusID</span>
-      </div>
-      <a href="/to-login.html" class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#6B6048] hover:text-[#1C1A14] px-3 py-2 rounded-lg bg-[#E8E1D5] border border-[#C9BFA8]/60 transition-colors">TO Login</a>
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-[#C85E0A] flex items-center justify-center rounded"><span class="text-white font-bold text-lg leading-none">N</span></div>
+      <span class="font-display font-bold tracking-tighter text-xl uppercase italic text-[#0C0A07]">NexusID</span>
     </div>
   </header>
 
   <main class="flex-1 px-6">
 
-    <section class="pt-10 pb-6 space-y-4">
+    <section class="pt-10 pb-8 space-y-4">
       <p class="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-[#4E7C2F]/80">Registry Infrastructure</p>
       <h1 class="text-4xl font-display font-bold tracking-tight text-[#0C0A07] leading-[1.05]">One ID.<br>Every Tournament.</h1>
       <p class="text-sm text-[#1C1A14]/80 leading-relaxed max-w-sm">
@@ -31,12 +28,14 @@
     </section>
 
     <section class="pb-10 space-y-3">
-      <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 focus-within:border-[#A89880] transition-colors">
-        <input type="text" id="search-input" placeholder="Search by Nexus ID or IGN" autocomplete="off"
-          class="w-full bg-transparent py-3.5 px-4 text-sm text-[#1C1A14] placeholder:text-[#6B6048]/50 outline-none">
-      </div>
-      <p id="search-hint" class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest pl-1">Type at least 2 characters</p>
-      <div id="search-results" class="space-y-2 hidden"></div>
+      <a href="/search.html" class="font-mono w-full flex flex-col items-center gap-1 text-center py-5 bg-[#2C4A2E] text-white rounded-xl transition-all btn-active">
+        <span class="font-bold uppercase tracking-[0.1em] text-sm">Search for a Player</span>
+        <span class="text-[11px] font-normal text-white/70 normal-case tracking-normal">Look up a Nexus ID or IGN</span>
+      </a>
+      <a href="/to-login.html" class="font-mono w-full flex flex-col items-center gap-1 text-center py-5 bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#1C1A14] rounded-xl transition-all btn-active">
+        <span class="font-bold uppercase tracking-[0.1em] text-sm">Sign Up / Login as TO</span>
+        <span class="text-[11px] font-normal text-[#6B6048] normal-case tracking-normal">Register players, teams &amp; tournaments</span>
+      </a>
     </section>
 
     <section id="stats-strip" class="grid grid-cols-3 gap-3 pb-10">
@@ -54,7 +53,7 @@
       </div>
     </section>
 
-    <section class="pb-10 space-y-5">
+    <section class="pb-12 space-y-5">
       <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#4E7C2F]/80">How It Works</p>
       <div class="space-y-4">
         <div class="flex gap-4">
@@ -70,10 +69,6 @@
           <p class="text-sm text-[#1C1A14]/85 leading-snug pt-0.5">Anyone can look up a Nexus ID to see a player's or organizer's tournament history.</p>
         </div>
       </div>
-    </section>
-
-    <section class="pb-12">
-      <a href="/to-login.html" class="font-mono w-full block text-center py-4 bg-[#2C4A2E] text-white font-bold uppercase tracking-[0.1em] text-sm rounded-xl transition-all btn-active">Tournament Organizer Login</a>
     </section>
 
   </main>
@@ -95,68 +90,5 @@
   loadCount("nexus_players", "stat-players");
   loadCount("nexus_tos", "stat-tos");
   loadCount("nexus_tournaments", "stat-tournaments");
-
-  const searchInput = document.getElementById("search-input");
-  const searchHint = document.getElementById("search-hint");
-  const searchResults = document.getElementById("search-results");
-  let debounceTimer;
-
-  function resultRow({ nx_id, real_name, claimed, matched_ign }) {
-    const label = matched_ign || real_name || "";
-    const unclaimedDot = claimed
-      ? ""
-      : `<span class="w-1.5 h-1.5 rounded-full bg-[#B3261E]"></span><span class="font-mono text-[10px] font-bold text-[#B3261E] uppercase">Unclaimed</span>`;
-    return `
-      <a href="/player.html?id=${encodeURIComponent(nx_id)}" class="block p-4 rounded-xl border border-[#C9BFA8]/30 bg-[#EDE7DC]/60 active:bg-[#E8E1D5] transition-colors">
-        <div class="flex justify-between items-start">
-          <div>
-            <h3 class="text-lg font-display font-bold text-[#0C0A07] leading-none mb-1">${nx_id}</h3>
-            ${label ? `<p class="text-xs text-[#6B6048] font-medium">${label}</p>` : ""}
-          </div>
-          <div class="flex items-center gap-1">${unclaimedDot}</div>
-        </div>
-      </a>`;
-  }
-
-  async function runSearch(q) {
-    const [byId, byIgn] = await Promise.all([
-      supabase.from("nexus_players").select("nx_id, real_name, claimed").ilike("nx_id", `%${q}%`).limit(8),
-      supabase.from("nexus_player_game_accounts")
-        .select("in_game_name, nexus_players(nx_id, real_name, claimed)")
-        .ilike("in_game_name", `%${q}%`).limit(8),
-    ]);
-
-    const merged = new Map();
-    (byId.data || []).forEach((p) => merged.set(p.nx_id, { ...p }));
-    (byIgn.data || []).forEach((row) => {
-      const p = row.nexus_players;
-      if (!p) return;
-      const existing = merged.get(p.nx_id) || { ...p };
-      merged.set(p.nx_id, { ...existing, matched_ign: row.in_game_name });
-    });
-
-    const results = Array.from(merged.values());
-    if (byId.error && byIgn.error) {
-      searchResults.innerHTML = `<p class="text-xs text-[#B3261E]">Search failed. Try again.</p>`;
-    } else if (results.length === 0) {
-      searchResults.innerHTML = `<p class="text-xs text-[#6B6048]">No matches for "${q}".</p>`;
-    } else {
-      searchResults.innerHTML = results.map(resultRow).join("");
-    }
-    searchResults.classList.remove("hidden");
-    searchHint.classList.add("hidden");
-  }
-
-  searchInput.addEventListener("input", () => {
-    clearTimeout(debounceTimer);
-    const q = searchInput.value.trim();
-    if (q.length < 2) {
-      searchResults.classList.add("hidden");
-      searchResults.innerHTML = "";
-      searchHint.classList.remove("hidden");
-      return;
-    }
-    debounceTimer = setTimeout(() => runSearch(q), 300);
-  });
 </script>
 </body></html>

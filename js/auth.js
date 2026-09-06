@@ -75,6 +75,67 @@ export async function createToProfile({ to_ign, to_uid, to_real_name, organisati
   return data;
 }
 
+// Creates a new Nexus ID (nexus_players row) plus its first linked game
+// account (nexus_player_game_accounts row). Two inserts, not a transaction —
+// consistent with the rest of this client-side model, which leans on RLS
+// per-table rather than DB transactions.
+export async function createPlayer({ real_name, game, in_game_uid, in_game_name }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const { data: player, error: playerError } = await supabase
+    .from("nexus_players")
+    .insert({ real_name: real_name || null, created_by_to_id: profile.id })
+    .select("id, nx_id, real_name")
+    .single();
+  if (playerError) throw playerError;
+
+  const { error: accountError } = await supabase
+    .from("nexus_player_game_accounts")
+    .insert({ player_id: player.id, game, in_game_uid, in_game_name, created_by_to_id: profile.id });
+  if (accountError) throw accountError;
+
+  return player;
+}
+
+// Creates a new persistent team (nexus_teams row). Rosters are built
+// separately via nexus_team_members — not part of this call.
+export async function createTeam({ team_name }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const { data, error } = await supabase
+    .from("nexus_teams")
+    .insert({ team_name, created_by_to_id: profile.id })
+    .select("id, tm_id, team_name")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Creates a new tournament (nexus_tournaments row). Matches/results/roster
+// are separate follow-up work — this only creates the tournament shell.
+export async function createTournament({ name, game, format, start_date, end_date, max_players }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const { data, error } = await supabase
+    .from("nexus_tournaments")
+    .insert({
+      name,
+      game,
+      format: format || null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+      max_players: max_players || null,
+      created_by_to_id: profile.id,
+    })
+    .select("id, name, game")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // Redirect guard for pages that require a logged-in TO. Returns the session
 // if present; otherwise sends the browser to the login page and returns null.
 export async function requireSession() {

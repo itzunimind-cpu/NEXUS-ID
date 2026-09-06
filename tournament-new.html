@@ -1,0 +1,135 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Create Tournament</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+  body { font-family: 'Manrope', sans-serif; background-color: #F2EDE4; color: #1C1A14; -webkit-font-smoothing: antialiased; }
+  .font-display { font-family: 'Oswald', sans-serif; }
+  .font-mono { font-family: 'Lexend Deca', sans-serif; }
+  input:focus, select:focus { outline: none; }
+  .input-focus-ring:focus-within { border-color: #A89880; box-shadow: 0 0 0 1px rgba(168, 152, 128, 0.25); }
+  .btn-active:active { transform: scale(0.98); opacity: 0.9; }
+  .success-overlay { background: rgba(242, 237, 228, 0.95); backdrop-filter: blur(8px); }
+</style></head>
+<body>
+<div class="w-full min-h-screen flex flex-col bg-[#F2EDE4] relative">
+  <header class="shrink-0 pt-14 px-6 pb-4 bg-[#F2EDE4] border-b border-[#C9BFA8]/50">
+    <div class="flex items-center gap-3 mb-4">
+      <a href="/to-dashboard.html" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#6B6048]">&larr;</a>
+      <div class="space-y-0.5">
+        <h1 class="text-xl font-display font-bold text-[#0C0A07]">Create Tournament</h1>
+        <p class="font-mono text-[11px] text-[#6B6048] uppercase tracking-widest">New Event</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-6 py-6">
+    <form id="tournament-form" class="space-y-6">
+      <div class="space-y-2">
+        <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Tournament Name <span class="text-[#B3261E]">*</span></label>
+        <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+          <input type="text" id="t_name" required class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. BGMI City Qualifier Vol 5">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-2">
+          <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Game <span class="text-[#B3261E]">*</span></label>
+          <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+            <select id="t_game" required class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14] appearance-none">
+              <option value="" disabled selected>Select game</option>
+              <option>BGMI</option>
+              <option>Free Fire</option>
+              <option>Valorant</option>
+              <option>COD Mobile</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Format</label>
+          <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+            <input type="text" id="t_format" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. Squad 4v4">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-2">
+          <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Start Date</label>
+          <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+            <input type="date" id="t_start" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]">
+          </div>
+        </div>
+        <div class="space-y-2">
+          <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">End Date</label>
+          <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+            <input type="date" id="t_end" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]">
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Max Players</label>
+        <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+          <input type="number" id="t_max_players" min="1" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. 64">
+        </div>
+      </div>
+
+      <p id="tournament-error" class="text-[11px] text-[#B3261E] font-medium hidden"></p>
+      <button type="submit" id="tournament-submit" class="font-mono w-full py-4 bg-[#2C4A2E] text-white font-bold uppercase tracking-[0.2em] text-sm rounded-xl transition-all btn-active">Create Tournament</button>
+      <p class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest text-center pb-4">Roster &amp; result logging is separate follow-up work — this creates the tournament shell.</p>
+    </form>
+  </main>
+</div>
+
+<div id="success-modal" class="hidden fixed inset-0 z-[100] success-overlay flex items-center justify-center p-6">
+  <div class="w-full max-w-sm rounded-3xl border border-[#C9BFA8]/60 bg-[#E8E1D5] p-8 shadow-2xl space-y-6">
+    <div class="w-16 h-16 rounded-full bg-[#4E7C2F]/10 border border-[#4E7C2F]/25 flex items-center justify-center mx-auto">
+      <span class="text-[#4E7C2F] text-3xl">✓</span>
+    </div>
+    <div class="text-center space-y-2">
+      <h3 class="text-xl font-display font-bold text-[#0C0A07]">Tournament Created</h3>
+      <p id="success-subtitle" class="text-sm text-[#6B6048]"></p>
+    </div>
+    <div class="space-y-3 pt-2">
+      <a href="/tournament-new.html" class="font-mono block w-full py-4 bg-[#2C4A2E] text-white text-center font-bold uppercase tracking-widest text-xs rounded-xl">Create Another</a>
+      <a href="/to-dashboard.html" class="font-mono block w-full py-4 bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#1C1A14] text-center font-bold uppercase tracking-widest text-xs rounded-xl">Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireSession, fetchMyToProfile, createTournament } from "/js/auth.js";
+
+  (async () => {
+    const session = await requireSession();
+    if (!session) return;
+    const profile = await fetchMyToProfile();
+    if (!profile) window.location.href = "/to-onboarding.html";
+  })();
+
+  const form = document.getElementById("tournament-form");
+  const errorEl = document.getElementById("tournament-error");
+  const submitBtn = document.getElementById("tournament-submit");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorEl.classList.add("hidden");
+    submitBtn.disabled = true;
+    try {
+      const created = await createTournament({
+        name: document.getElementById("t_name").value.trim(),
+        game: document.getElementById("t_game").value,
+        format: document.getElementById("t_format").value.trim(),
+        start_date: document.getElementById("t_start").value,
+        end_date: document.getElementById("t_end").value,
+        max_players: document.getElementById("t_max_players").value ? Number(document.getElementById("t_max_players").value) : null,
+      });
+      document.getElementById("success-subtitle").textContent = `"${created.name}" is now in draft status.`;
+      document.getElementById("success-modal").classList.remove("hidden");
+    } catch (err) {
+      errorEl.textContent = err.message || "Could not create tournament. Please try again.";
+      errorEl.classList.remove("hidden");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+</body></html>
