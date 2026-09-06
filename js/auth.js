@@ -7,7 +7,17 @@ export async function getSession() {
 }
 
 export async function signUpTo(email, password) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    // Without this, the confirmation link falls back to Supabase's configured
+    // Site URL (the landing page), which no longer loads the Supabase client
+    // at all — the session token in that redirect would just be dropped.
+    // Goes straight to onboarding (not login) since confirming establishes a
+    // session directly — to-onboarding.html's own requireSession()/profile
+    // check still redirects to login if that session detection ever fails.
+    options: { emailRedirectTo: `${window.location.origin}/to-onboarding.html` },
+  });
   if (error) throw error;
   return data; // data.session is null if email confirmation is required
 }
