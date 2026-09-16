@@ -47,7 +47,7 @@
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;">
         <h1 style="font-family:var(--font-display);font-weight:700;letter-spacing:-0.01em;font-size:clamp(1.5rem,2vw + 1.1rem,1.9rem);color:var(--text-hero);margin:0;">Search the Registry</h1>
-        <p style="font-size:13px;color:var(--text-dim);font-weight:500;margin:0;">Find a player by Nexus ID or in-game name</p>
+        <p style="font-size:13px;color:var(--text-dim);font-weight:500;margin:0;">Find a player, organizer, or team by ID or name</p>
       </div>
     </div>
   </header>
@@ -57,7 +57,7 @@
 
       <div style="position:relative;">
         <iconify-icon icon="lucide:search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:15px;pointer-events:none;"></iconify-icon>
-        <input type="text" id="search-input" placeholder="Search by Nexus ID or IGN" autocomplete="off" autofocus class="search-input">
+        <input type="text" id="search-input" placeholder="Search by NX-, TO-, TM- ID, IGN, or name" autocomplete="off" autofocus class="search-input">
       </div>
 
       <p id="search-hint" class="status-text">Type at least 2 characters</p>
@@ -90,47 +90,69 @@
     if (status === "empty") emptyEl.textContent = `No matches for "${query}".`;
   }
 
-  function resultCard({ nx_id, real_name, claimed, matched_ign }) {
-    const label = matched_ign || real_name || "";
-    const unclaimed = claimed
-      ? ""
-      : `<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding-top:2px;">
+  const TYPE_META = {
+    player: { href: "/player.html", badge: "Player", color: "var(--forest)" },
+    to: { href: "/to.html", badge: "Organizer", color: "var(--forest)" },
+    team: { href: "/team.html", badge: "Team", color: "var(--orange)" },
+  };
+
+  function resultCard({ type, id_code, label, unclaimed }) {
+    const meta = TYPE_META[type];
+    const unclaimedBadge = unclaimed
+      ? `<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding-top:2px;">
            <span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:block;"></span>
            <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--red);">Unclaimed</span>
-         </div>`;
+         </div>`
+      : `<span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${meta.color};flex-shrink:0;padding-top:2px;">${meta.badge}</span>`;
     return `
-      <a href="/player.html?id=${encodeURIComponent(nx_id)}" class="result-card">
+      <a href="${meta.href}?id=${encodeURIComponent(id_code)}" class="result-card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <h3 style="font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--text-hero);margin:0;line-height:1;">${nx_id}</h3>
+            <h3 style="font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--text-hero);margin:0;line-height:1;">${id_code}</h3>
             ${label ? `<p style="font-size:12px;color:var(--text-dim);font-weight:500;margin:0;">${label}</p>` : ""}
           </div>
-          ${unclaimed}
+          ${unclaimedBadge}
         </div>
       </a>`;
   }
 
   async function runSearch(q) {
-    const [byId, byIgn] = await Promise.all([
+    const [byId, byIgn, byTo, byTeam] = await Promise.all([
       supabase.from("nexus_players").select("nx_id, real_name, claimed").ilike("nx_id", `%${q}%`).limit(8),
       supabase.from("nexus_player_game_accounts")
         .select("in_game_name, nexus_players(nx_id, real_name, claimed)")
         .ilike("in_game_name", `%${q}%`).limit(8),
+      supabase.from("nexus_tos")
+        .select("to_id, to_ign, organisation_name")
+        .or(`to_id.ilike.%${q}%,to_ign.ilike.%${q}%,organisation_name.ilike.%${q}%`).limit(8),
+      supabase.from("nexus_teams")
+        .select("tm_id, team_name")
+        .or(`tm_id.ilike.%${q}%,team_name.ilike.%${q}%`).limit(8),
     ]);
 
-    if (byId.error && byIgn.error) {
+    if (byId.error && byIgn.error && byTo.error && byTeam.error) {
       setStatus("error");
       return;
     }
 
     const merged = new Map();
-    (byId.data || []).forEach((p) => merged.set(p.nx_id, { ...p }));
+    (byId.data || []).forEach((p) => merged.set(p.nx_id, {
+      type: "player", id_code: p.nx_id, label: p.real_name || "", unclaimed: !p.claimed,
+    }));
     (byIgn.data || []).forEach((row) => {
       const p = row.nexus_players;
       if (!p) return;
-      const existing = merged.get(p.nx_id) || { ...p };
-      merged.set(p.nx_id, { ...existing, matched_ign: row.in_game_name });
+      const existing = merged.get(p.nx_id) || {
+        type: "player", id_code: p.nx_id, label: p.real_name || "", unclaimed: !p.claimed,
+      };
+      merged.set(p.nx_id, { ...existing, label: row.in_game_name || existing.label });
     });
+    (byTo.data || []).forEach((t) => merged.set(t.to_id, {
+      type: "to", id_code: t.to_id, label: t.organisation_name || t.to_ign || "", unclaimed: false,
+    }));
+    (byTeam.data || []).forEach((t) => merged.set(t.tm_id, {
+      type: "team", id_code: t.tm_id, label: t.team_name || "", unclaimed: false,
+    }));
 
     const results = Array.from(merged.values());
     if (results.length === 0) {
