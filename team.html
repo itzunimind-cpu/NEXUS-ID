@@ -350,9 +350,12 @@
         </div>
 
         <div style="display:flex;flex-direction:column;gap:12px;">
-          <div style="display:flex;align-items:center;gap:4px;">
-            <div class="tab ${activeTab === "roster" ? "active" : ""}" data-tab="roster"><span>Roster</span></div>
-            <div class="tab ${activeTab === "history" ? "active" : ""}" data-tab="history" style="padding:6px 10px;"><span>History</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:4px;">
+              <div class="tab ${activeTab === "roster" ? "active" : ""}" data-tab="roster"><span>Roster</span></div>
+              <div class="tab ${activeTab === "history" ? "active" : ""}" data-tab="history" style="padding:6px 10px;"><span>History</span></div>
+            </div>
+            <a href="/team-roster.html?id=${encodeURIComponent(team.tm_id)}" style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--forest);">Manage Roster &rarr;</a>
           </div>
           <div id="tab-content">${activeTab === "roster" ? rosterHtml() : historyHtml()}</div>
         </div>

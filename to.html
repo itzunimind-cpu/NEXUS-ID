@@ -256,6 +256,10 @@
                 <iconify-icon icon="lucide:banknote" style="color:var(--text-dim);font-size:14px;flex-shrink:0;"></iconify-icon>
                 <span style="font-size:12px;color:var(--text-body);">Prize Pool: ${t.prizePool}</span>
               </div>` : ""}
+              <a href="/tournament-editor.html?id=${t.id}" style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                <iconify-icon icon="lucide:pencil" style="color:var(--forest);font-size:13px;flex-shrink:0;"></iconify-icon>
+                <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--forest);">Manage Matches &amp; Results</span>
+              </a>
             </div>
           </div>
         </div>`).join("");

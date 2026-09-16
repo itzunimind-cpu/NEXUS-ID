@@ -1,0 +1,532 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Tournament Editor</title>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet">
+<datalist id="map-options">
+  <option value="Erangel"><option value="Miramar"><option value="Sanhok"><option value="Rondo">
+</datalist>
+<style>
+  :root {
+    --bg: #F2EDE4; --bg-panel: #E8E1D5; --bg-card: #EDE7DC;
+    --border: #C9BFA8; --border-mid: #A89880;
+    --forest: #2C4A2E; --olive: #4E7C2F; --orange: #C85E0A; --red: #9B1C11;
+    --text-hero: #0C0A07; --text-body: #1C1A14; --text-dim: #6B6048;
+    --radius-sm: 2px; --radius-md: 3px; --radius-lg: 4px;
+    --font-display: 'Oswald', sans-serif; --font-body: 'Manrope', sans-serif; --font-mono: 'Lexend Deca', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text-body); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  a { text-decoration: none; }
+  input:focus, select:focus { outline: none; border-color: var(--forest) !important; }
+  .field { width: 100%; padding: 10px 12px; background: var(--bg); color: var(--text-body); border: 1px solid var(--border-mid); border-radius: var(--radius-md); font-family: var(--font-body); font-size: 13px; }
+  .btn { font-family: var(--font-mono); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; border-radius: var(--radius-md); padding: 8px 14px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-body); }
+  .btn-primary { background: var(--forest); color: #fff; border-color: var(--forest); }
+  .btn-orange { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .btn-sm { padding: 5px 10px; font-size: 10px; }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .status-pill { font-family: var(--font-mono); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; background: var(--bg-card); color: var(--text-dim); }
+  .status-pill.active { border-color: var(--olive); color: var(--olive); background: rgba(78,124,47,.08); }
+  .match-card { border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); overflow: hidden; }
+  .match-head { cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; }
+  .match-panel { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .3s ease, opacity .2s ease; }
+  .match-panel.open { max-height: 6000px; opacity: 1; }
+  .chevron { transition: transform .2s ease; }
+  .chevron.open { transform: rotate(180deg); }
+  .squad-block { border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-panel); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .member-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .result-drop { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 20; max-height: 200px; overflow-y: auto; }
+  .result-item { padding: 8px 12px; font-size: 13px; cursor: pointer; }
+  .result-item:hover { background: var(--bg-card); }
+</style></head>
+<body>
+<div style="width:100%;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text-body);font-family:var(--font-body);">
+
+  <header style="flex-shrink:0;padding:clamp(24px,4vw,40px) clamp(20px,6vw,72px) clamp(16px,2vw,20px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:640px;display:flex;align-items:center;gap:12px;">
+      <a href="/to-dashboard.html" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);flex-shrink:0;">
+        <iconify-icon icon="lucide:arrow-left" style="font-size:15px;"></iconify-icon>
+      </a>
+      <div>
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:20px;color:var(--text-hero);margin:0;">Tournament Editor</h1>
+        <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim);margin:2px 0 0;">Matches &amp; Results</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" style="flex:1;padding:clamp(4px,1vw,8px) clamp(20px,6vw,72px) clamp(48px,6vw,72px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:640px;">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-dim);">Loading…</p>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { supabase } from "/js/supabase-config.js";
+  import {
+    requireSession, fetchMyToProfile, createMatch, updateTournamentStatus,
+    createTeam, addTeamMember, createPlayer, logParticipations, updateParticipations,
+  } from "/js/auth.js";
+
+  const content = document.getElementById("content");
+  const tournamentId = Number(new URLSearchParams(window.location.search).get("id"));
+  const EDIT_WINDOW_MS = 48 * 60 * 60 * 1000;
+
+  let tournament = null;
+  let matches = [];
+  let participations = []; // all rows for this tournament's matches
+  const openMatches = new Set();
+  const activeForms = new Map(); // matchId -> { mode: 'squad'|'solo', team?: {...}, editingKey?: string }
+
+  function wrap(inner) { content.innerHTML = `<div style="width:100%;max-width:640px;">${inner}</div>`; }
+
+  function withinEditWindow(createdAt) {
+    return Date.now() - new Date(createdAt).getTime() <= EDIT_WINDOW_MS;
+  }
+
+  async function loadAll() {
+    const { data: t } = await supabase
+      .from("nexus_tournaments")
+      .select("id, name, game, stage, status, created_by_to_id")
+      .eq("id", tournamentId)
+      .maybeSingle();
+    tournament = t;
+    if (!tournament) return;
+
+    const { data: matchRows } = await supabase
+      .from("nexus_matches")
+      .select("id, match_number, map, played_at")
+      .eq("tournament_id", tournament.id)
+      .order("match_number", { ascending: true });
+    matches = matchRows || [];
+
+    const matchIds = matches.map((m) => m.id);
+    if (matchIds.length) {
+      const { data: partRows } = await supabase
+        .from("nexus_participations")
+        .select("id, match_id, team_id, player_id, placement, kills, created_at, nexus_players(nx_id, real_name), nexus_teams(tm_id, team_name)")
+        .in("match_id", matchIds);
+      participations = partRows || [];
+    } else {
+      participations = [];
+    }
+  }
+
+  function groupsForMatch(matchId) {
+    const rows = participations.filter((p) => p.match_id === matchId);
+    const squads = new Map(); // team_id -> rows[]
+    const solo = [];
+    rows.forEach((p) => {
+      if (p.team_id) {
+        if (!squads.has(p.team_id)) squads.set(p.team_id, []);
+        squads.get(p.team_id).push(p);
+      } else {
+        solo.push(p);
+      }
+    });
+    return { squads, solo };
+  }
+
+  function squadBlockHtml(matchId, teamId, rows) {
+    const team = rows[0].nexus_teams;
+    const placement = rows[0].placement;
+    const editable = rows.every((r) => withinEditWindow(r.created_at));
+    return `
+      <div class="squad-block">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:700;color:var(--text-hero);">${team ? team.team_name : "Unknown Squad"} <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);font-weight:600;">${team ? team.tm_id : ""}</span></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--orange);">#${placement ?? "—"}</span>
+            ${editable ? `<button class="btn btn-sm" data-edit-squad="${matchId}:${teamId}">Edit</button>` : `<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">Locked</span>`}
+          </div>
+        </div>
+        ${rows.map((r) => `
+          <div class="member-row">
+            <span style="font-size:12px;color:var(--text-body);">${r.nexus_players ? (r.nexus_players.real_name || r.nexus_players.nx_id) : "Unknown"}</span>
+            <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--forest);">${r.kills} kills</span>
+          </div>`).join("")}
+      </div>`;
+  }
+
+  function soloBlockHtml(matchId, row) {
+    const editable = withinEditWindow(row.created_at);
+    return `
+      <div class="squad-block">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:700;color:var(--text-hero);">${row.nexus_players ? (row.nexus_players.real_name || row.nexus_players.nx_id) : "Unknown"} <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">Solo</span></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--orange);">#${row.placement ?? "—"}</span>
+            <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--forest);">${row.kills} kills</span>
+            ${editable ? `<button class="btn btn-sm" data-edit-solo="${row.id}">Edit</button>` : `<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">Locked</span>`}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function addFormHtml(matchId) {
+    const form = activeForms.get(matchId);
+    if (!form) {
+      return `
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" data-open-form="${matchId}:squad">+ Log Squad Result</button>
+          <button class="btn" data-open-form="${matchId}:solo">+ Log Solo Result</button>
+        </div>`;
+    }
+    if (form.mode === "solo") {
+      const editing = form.editingRow;
+      return `
+        <div class="squad-block" style="position:relative;">
+          <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--olive);margin:0;">${editing ? "Edit Solo Result" : "Log Solo Result"}</p>
+          ${editing ? `<p style="font-size:13px;font-weight:700;">${editing.nexus_players ? (editing.nexus_players.real_name || editing.nexus_players.nx_id) : ""}</p>` : `
+          <div style="position:relative;">
+            <input type="text" class="field" id="solo-player-search-${matchId}" placeholder="Search player by Nexus ID or IGN" autocomplete="off" value="${form.player ? (form.player.real_name || form.player.nx_id) : ""}">
+            <div id="solo-player-results-${matchId}"></div>
+          </div>`}
+          <div style="display:flex;gap:8px;">
+            <input type="number" class="field" id="solo-placement-${matchId}" placeholder="Placement" value="${editing ? editing.placement ?? "" : ""}">
+            <input type="number" class="field" id="solo-kills-${matchId}" placeholder="Kills" value="${editing ? editing.kills : ""}">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" data-submit-solo="${matchId}">${editing ? "Save" : "Log Result"}</button>
+            <button class="btn" data-cancel-form="${matchId}">Cancel</button>
+          </div>
+        </div>`;
+    }
+    // squad mode
+    if (!form.team) {
+      return `
+        <div class="squad-block" style="position:relative;">
+          <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--olive);margin:0;">Select Squad</p>
+          <div style="position:relative;">
+            <input type="text" class="field" id="team-search-${matchId}" placeholder="Search team by TM- id or name" autocomplete="off">
+            <div id="team-results-${matchId}"></div>
+          </div>
+          <button class="btn" data-cancel-form="${matchId}">Cancel</button>
+        </div>`;
+    }
+    if (!form.roster || !form.roster.length) {
+      return `
+        <div class="squad-block">
+          <p style="font-size:13px;font-weight:700;">${form.team.team_name} <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${form.team.tm_id}</span></p>
+          <p style="font-size:12px;color:var(--text-dim);">This squad has no active roster yet.</p>
+          <a href="/team-roster.html?id=${encodeURIComponent(form.team.tm_id)}" class="btn" style="text-align:center;">Manage Roster &rarr;</a>
+          <button class="btn" data-cancel-form="${matchId}">Cancel</button>
+        </div>`;
+    }
+    const editingKills = form.editingRows ? new Map(form.editingRows.map((r) => [r.player_id, r])) : null;
+    return `
+      <div class="squad-block">
+        <p style="font-size:13px;font-weight:700;">${form.team.team_name} <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${form.team.tm_id}</span></p>
+        <input type="number" class="field" id="squad-placement-${matchId}" placeholder="Squad Placement" value="${editingKills ? (form.editingRows[0].placement ?? "") : ""}">
+        ${form.roster.map((m) => `
+          <div class="member-row">
+            <span style="font-size:12px;">${m.real_name || m.nx_id}</span>
+            <input type="number" class="field" style="width:80px;" data-kills-input="${m.id}" placeholder="Kills" value="${editingKills && editingKills.get(m.id) ? editingKills.get(m.id).kills : ""}">
+          </div>`).join("")}
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" data-submit-squad="${matchId}">${editingKills ? "Save" : "Log Result"}</button>
+          <button class="btn" data-cancel-form="${matchId}">Cancel</button>
+        </div>
+      </div>`;
+  }
+
+  function matchCardHtml(m) {
+    const { squads, solo } = groupsForMatch(m.id);
+    const isOpen = openMatches.has(m.id);
+    const squadCount = squads.size + solo.length;
+    return `
+      <div class="match-card" style="margin-bottom:12px;">
+        <div class="match-head" data-toggle-match="${m.id}">
+          <div>
+            <span style="font-size:14px;font-weight:700;">Match ${m.match_number}${m.map ? ` — ${m.map}` : ""}</span>
+            <p style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin:2px 0 0;">${m.played_at ? new Date(m.played_at).toLocaleDateString() : "No date set"} · ${squadCount} entr${squadCount === 1 ? "y" : "ies"} logged</p>
+          </div>
+          <iconify-icon class="chevron ${isOpen ? "open" : ""}" icon="lucide:chevron-down"></iconify-icon>
+        </div>
+        <div class="match-panel ${isOpen ? "open" : ""}">
+          <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
+            ${Array.from(squads.entries()).map(([tid, rows]) => squadBlockHtml(m.id, tid, rows)).join("")}
+            ${solo.map((r) => soloBlockHtml(m.id, r)).join("")}
+            ${addFormHtml(m.id)}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderMatches() {
+    document.getElementById("matches-list").innerHTML = matches.length
+      ? matches.map(matchCardHtml).join("")
+      : `<p style="font-size:13px;color:var(--text-dim);">No matches created yet.</p>`;
+    bindMatchEvents();
+  }
+
+  async function searchTeams(q) {
+    const { data } = await supabase.from("nexus_teams").select("id, tm_id, team_name").or(`tm_id.ilike.%${q}%,team_name.ilike.%${q}%`).limit(6);
+    return data || [];
+  }
+  async function searchPlayersForSolo(q) {
+    const [byId, byIgn] = await Promise.all([
+      supabase.from("nexus_players").select("id, nx_id, real_name").ilike("nx_id", `%${q}%`).limit(6),
+      supabase.from("nexus_player_game_accounts").select("nexus_players(id, nx_id, real_name)").ilike("in_game_name", `%${q}%`).limit(6),
+    ]);
+    const merged = new Map();
+    (byId.data || []).forEach((p) => merged.set(p.id, p));
+    (byIgn.data || []).forEach((row) => { if (row.nexus_players) merged.set(row.nexus_players.id, row.nexus_players); });
+    return Array.from(merged.values());
+  }
+  async function loadRosterFor(teamId) {
+    const { data } = await supabase
+      .from("nexus_team_members")
+      .select("player_id, nexus_players(id, nx_id, real_name)")
+      .eq("team_id", teamId)
+      .is("left_at", null);
+    return (data || []).filter((m) => m.nexus_players).map((m) => m.nexus_players);
+  }
+
+  function bindMatchEvents() {
+    content.querySelectorAll("[data-toggle-match]").forEach((head) => {
+      head.addEventListener("click", (e) => {
+        if (e.target.closest("button") || e.target.closest("input")) return;
+        const id = Number(head.getAttribute("data-toggle-match"));
+        if (openMatches.has(id)) openMatches.delete(id); else openMatches.add(id);
+        renderMatches();
+      });
+    });
+
+    content.querySelectorAll("[data-open-form]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const [matchId, mode] = btn.getAttribute("data-open-form").split(":");
+        activeForms.set(Number(matchId), { mode });
+        renderMatches();
+      });
+    });
+
+    content.querySelectorAll("[data-cancel-form]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeForms.delete(Number(btn.getAttribute("data-cancel-form")));
+        renderMatches();
+      });
+    });
+
+    content.querySelectorAll("[data-edit-squad]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const [matchId, teamId] = btn.getAttribute("data-edit-squad").split(":").map(Number);
+        const rows = participations.filter((p) => p.match_id === matchId && p.team_id === teamId);
+        const team = rows[0].nexus_teams;
+        loadRosterFor(teamId).then((roster) => {
+          activeForms.set(matchId, { mode: "squad", team, roster, editingRows: rows });
+          renderMatches();
+        });
+      });
+    });
+
+    content.querySelectorAll("[data-edit-solo]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const rowId = Number(btn.getAttribute("data-edit-solo"));
+        const row = participations.find((p) => p.id === rowId);
+        activeForms.set(row.match_id, { mode: "solo", editingRow: row });
+        renderMatches();
+      });
+    });
+
+    // Team search (squad form, team not yet selected)
+    matches.forEach((m) => {
+      const searchEl = document.getElementById(`team-search-${m.id}`);
+      if (searchEl) {
+        let timer;
+        searchEl.addEventListener("input", () => {
+          clearTimeout(timer);
+          const q = searchEl.value.trim();
+          const resultsEl = document.getElementById(`team-results-${m.id}`);
+          if (q.length < 2) { resultsEl.innerHTML = ""; return; }
+          timer = setTimeout(async () => {
+            const results = await searchTeams(q);
+            resultsEl.innerHTML = `<div class="result-drop">
+              ${results.map((t) => `<div class="result-item" data-pick-team="${m.id}:${t.id}">${t.team_name} <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${t.tm_id}</span></div>`).join("")}
+              <div class="result-item" data-create-team="${m.id}" style="color:var(--forest);font-weight:700;">+ Create New Team "${q}"</div>
+            </div>`;
+            resultsEl.querySelectorAll("[data-pick-team]").forEach((el) => el.addEventListener("click", async () => {
+              const [, teamId] = el.getAttribute("data-pick-team").split(":").map(Number);
+              const { data: team } = await supabase.from("nexus_teams").select("id, tm_id, team_name").eq("id", teamId).single();
+              const roster = await loadRosterFor(team.id);
+              activeForms.set(m.id, { mode: "squad", team, roster });
+              renderMatches();
+            }));
+            resultsEl.querySelector("[data-create-team]")?.addEventListener("click", async () => {
+              try {
+                const created = await createTeam({ team_name: q });
+                activeForms.set(m.id, { mode: "squad", team: created, roster: [] });
+                renderMatches();
+              } catch (err) { alert(err.message || "Could not create team."); }
+            });
+          }, 300);
+        });
+      }
+
+      const submitSquadBtn = content.querySelector(`[data-submit-squad="${m.id}"]`);
+      if (submitSquadBtn) {
+        submitSquadBtn.addEventListener("click", async () => {
+          const form = activeForms.get(m.id);
+          const placement = document.getElementById(`squad-placement-${m.id}`).value;
+          const entries = form.roster.map((p) => ({
+            player_id: p.id,
+            kills: document.querySelector(`[data-kills-input="${p.id}"]`).value || 0,
+          }));
+          submitSquadBtn.disabled = true;
+          try {
+            if (form.editingRows) {
+              const updates = form.editingRows.map((r) => ({
+                id: r.id, placement,
+                kills: document.querySelector(`[data-kills-input="${r.player_id}"]`).value || 0,
+              }));
+              await updateParticipations({ updates });
+            } else {
+              await logParticipations({ match_id: m.id, team_id: form.team.id, placement, entries });
+            }
+            activeForms.delete(m.id);
+            await loadAll();
+            renderMatches();
+          } catch (err) {
+            alert(err.message || "Could not save result.");
+            submitSquadBtn.disabled = false;
+          }
+        });
+      }
+
+      const soloSearchEl = document.getElementById(`solo-player-search-${m.id}`);
+      if (soloSearchEl) {
+        let timer;
+        soloSearchEl.addEventListener("input", () => {
+          clearTimeout(timer);
+          const q = soloSearchEl.value.trim();
+          const resultsEl = document.getElementById(`solo-player-results-${m.id}`);
+          if (q.length < 2) { resultsEl.innerHTML = ""; return; }
+          timer = setTimeout(async () => {
+            const results = await searchPlayersForSolo(q);
+            resultsEl.innerHTML = `<div class="result-drop">
+              ${results.map((p) => `<div class="result-item" data-pick-player="${m.id}:${p.id}">${p.real_name || p.nx_id} <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${p.nx_id}</span></div>`).join("")}
+              <div class="result-item" data-create-player="${m.id}" style="color:var(--forest);font-weight:700;">+ Create New Player "${q}"</div>
+            </div>`;
+            resultsEl.querySelectorAll("[data-pick-player]").forEach((el) => el.addEventListener("click", () => {
+              const p = results.find((r) => String(r.id) === el.getAttribute("data-pick-player").split(":")[1]);
+              activeForms.set(m.id, { mode: "solo", player: p });
+              renderMatches();
+            }));
+            resultsEl.querySelector("[data-create-player]")?.addEventListener("click", async () => {
+              const uid = prompt("In-game UID?");
+              if (!uid) return;
+              const game = prompt("Game (e.g. BGMI)?") || "BGMI";
+              try {
+                const created = await createPlayer({ real_name: "", game, in_game_uid: uid, in_game_name: q });
+                activeForms.set(m.id, { mode: "solo", player: created });
+                renderMatches();
+              } catch (err) { alert(err.message || "Could not create player."); }
+            });
+          }, 300);
+        });
+      }
+
+      const submitSoloBtn = content.querySelector(`[data-submit-solo="${m.id}"]`);
+      if (submitSoloBtn) {
+        submitSoloBtn.addEventListener("click", async () => {
+          const form = activeForms.get(m.id);
+          const placement = document.getElementById(`solo-placement-${m.id}`).value;
+          const kills = document.getElementById(`solo-kills-${m.id}`).value || 0;
+          submitSoloBtn.disabled = true;
+          try {
+            if (form.editingRow) {
+              await updateParticipations({ updates: [{ id: form.editingRow.id, placement, kills }] });
+            } else {
+              if (!form.player) { alert("Search and pick a player first."); submitSoloBtn.disabled = false; return; }
+              await logParticipations({ match_id: m.id, team_id: null, placement, entries: [{ player_id: form.player.id, kills }] });
+            }
+            activeForms.delete(m.id);
+            await loadAll();
+            renderMatches();
+          } catch (err) {
+            alert(err.message || "Could not save result.");
+            submitSoloBtn.disabled = false;
+          }
+        });
+      }
+    });
+  }
+
+  function statusHtml() {
+    const statuses = ["draft", "active", "concluded"];
+    return statuses.map((s) => `<button class="status-pill ${tournament.status === s ? "active" : ""}" data-status="${s}">${s}</button>`).join("");
+  }
+
+  function renderPage() {
+    wrap(`
+      <div style="display:flex;flex-direction:column;gap:24px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <h2 style="font-family:var(--font-display);font-weight:700;font-size:24px;color:var(--text-hero);margin:0;">${tournament.name}</h2>
+          <p style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin:0;">${tournament.game}${tournament.stage ? " · " + tournament.stage : ""}</p>
+          <div style="display:flex;gap:8px;" id="status-controls">${statusHtml()}</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <p style="font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--olive);margin:0;">New Match</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="number" class="field" id="new-match-number" placeholder="Match #" style="max-width:100px;" value="${matches.length + 1}">
+            <input type="text" class="field" id="new-match-map" list="map-options" placeholder="Map" style="max-width:160px;">
+            <input type="date" class="field" id="new-match-date" style="max-width:160px;">
+            <button class="btn btn-orange" id="create-match-btn">+ Add Match</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <p style="font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--olive);margin:0;">Matches</p>
+          <div id="matches-list"></div>
+        </div>
+      </div>`);
+
+    document.getElementById("status-controls").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-status]");
+      if (!btn) return;
+      const status = btn.getAttribute("data-status");
+      if (status === tournament.status) return;
+      try {
+        await updateTournamentStatus({ tournament_id: tournament.id, status });
+        tournament.status = status;
+        document.getElementById("status-controls").innerHTML = statusHtml();
+      } catch (err) { alert(err.message || "Could not update status."); }
+    });
+
+    document.getElementById("create-match-btn").addEventListener("click", async () => {
+      const match_number = Number(document.getElementById("new-match-number").value) || matches.length + 1;
+      const map = document.getElementById("new-match-map").value.trim();
+      const played_at = document.getElementById("new-match-date").value;
+      try {
+        await createMatch({ tournament_id: tournament.id, match_number, map, played_at });
+        await loadAll();
+        renderMatches();
+        document.getElementById("new-match-number").value = matches.length + 1;
+        document.getElementById("new-match-map").value = "";
+      } catch (err) { alert(err.message || "Could not create match."); }
+    });
+
+    renderMatches();
+  }
+
+  async function render() {
+    const session = await requireSession();
+    if (!session) return;
+    const profile = await fetchMyToProfile();
+    if (!profile) { window.location.href = "/to-onboarding.html"; return; }
+
+    await loadAll();
+    if (!tournament) {
+      wrap(`<p style="font-size:14px;color:var(--text-dim);">Tournament not found.</p>`);
+      return;
+    }
+    if (tournament.created_by_to_id !== profile.id) {
+      wrap(`<p style="font-size:14px;color:var(--text-dim);">This isn't your tournament to edit.</p>`);
+      return;
+    }
+    renderPage();
+  }
+
+  render();
+</script>
+</body></html>

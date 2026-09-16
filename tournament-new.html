@@ -89,7 +89,7 @@
 
       <p id="tournament-error" class="text-[11px] text-[#B3261E] font-medium hidden"></p>
       <button type="submit" id="tournament-submit" class="font-mono w-full py-4 bg-[#2C4A2E] text-white font-bold uppercase tracking-[0.2em] text-sm rounded-xl transition-all btn-active">Create Tournament</button>
-      <p class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest text-center pb-4">Roster &amp; result logging is separate follow-up work — this creates the tournament shell.</p>
+      <p class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest text-center pb-4">Match &amp; result logging happens next, in the Tournament Editor.</p>
     </form>
   </main>
 </div>
@@ -104,7 +104,8 @@
       <p id="success-subtitle" class="text-sm text-[#6B6048]"></p>
     </div>
     <div class="space-y-3 pt-2">
-      <a href="/tournament-new.html" class="font-mono block w-full py-4 bg-[#2C4A2E] text-white text-center font-bold uppercase tracking-widest text-xs rounded-xl">Create Another</a>
+      <a id="success-editor-link" href="#" class="font-mono block w-full py-4 bg-[#2C4A2E] text-white text-center font-bold uppercase tracking-widest text-xs rounded-xl">Manage Matches &amp; Results</a>
+      <a href="/tournament-new.html" class="font-mono block w-full py-4 bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#1C1A14] text-center font-bold uppercase tracking-widest text-xs rounded-xl">Create Another</a>
       <a href="/to-dashboard.html" class="font-mono block w-full py-4 bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#1C1A14] text-center font-bold uppercase tracking-widest text-xs rounded-xl">Back to Dashboard</a>
     </div>
   </div>
@@ -140,6 +141,7 @@
         prize_pool: document.getElementById("t_prize_pool").value ? Number(document.getElementById("t_prize_pool").value) : null,
       });
       document.getElementById("success-subtitle").textContent = `"${created.name}" is now in draft status.`;
+      document.getElementById("success-editor-link").href = `/tournament-editor.html?id=${created.id}`;
       document.getElementById("success-modal").classList.remove("hidden");
     } catch (err) {
       errorEl.textContent = err.message || "Could not create tournament. Please try again.";

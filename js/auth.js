@@ -158,6 +158,95 @@ export async function createTournament({ name, game, format, stage, prize_pool, 
   return data;
 }
 
+// Adds an existing player to an existing team's roster. Any authenticated TO
+// may do this (2026-09-05 decision: cross-TO shared rosters) — only removal
+// is restricted to the team's own creator.
+export async function addTeamMember({ team_id, player_id }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const { data, error } = await supabase
+    .from("nexus_team_members")
+    .insert({ team_id, player_id, added_by_to_id: profile.id })
+    .select("id, joined_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Soft-removes a player from a team's active roster by setting left_at —
+// preserves join/leave history instead of deleting the row. RLS only allows
+// this for the team's own creator (0004_team_roster_removal.sql).
+export async function removeTeamMember({ membership_id }) {
+  const { error } = await supabase
+    .from("nexus_team_members")
+    .update({ left_at: new Date().toISOString() })
+    .eq("id", membership_id);
+  if (error) throw error;
+}
+
+// Creates a new match (nexus_matches row) under a tournament.
+export async function createMatch({ tournament_id, match_number, map, played_at }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const { data, error } = await supabase
+    .from("nexus_matches")
+    .insert({ tournament_id, match_number, map: map || null, played_at: played_at || null, created_by_to_id: profile.id })
+    .select("id, match_number, map, played_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Moves a tournament through its draft/active/concluded lifecycle.
+export async function updateTournamentStatus({ tournament_id, status }) {
+  const { error } = await supabase
+    .from("nexus_tournaments")
+    .update({ status })
+    .eq("id", tournament_id);
+  if (error) throw error;
+}
+
+// Logs one participation row per squad member for a single match — one
+// placement shared by the whole squad, individual kills per player. A single
+// multi-row INSERT is one Postgres statement, so it's already atomic (all
+// rows succeed or none do) without needing a manual transaction wrapper.
+// team_id may be null for a solo (non-squad) entry — pass a single-entry array.
+export async function logParticipations({ match_id, team_id, placement, entries }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const rows = entries.map(({ player_id, kills }) => ({
+    match_id,
+    team_id: team_id || null,
+    player_id,
+    placement: placement === "" || placement === null ? null : Number(placement),
+    kills: Number(kills) || 0,
+    logged_by_to_id: profile.id,
+  }));
+
+  const { data, error } = await supabase.from("nexus_participations").insert(rows).select("id");
+  if (error) throw error;
+  return data;
+}
+
+// Edits already-logged participation rows (placement/kills only — matches
+// nexus_participations' column-level update grant) within the 48h window.
+// One UPDATE per row; RLS blocks any row whose 48h window has closed.
+export async function updateParticipations({ updates }) {
+  for (const { id, placement, kills } of updates) {
+    const { error } = await supabase
+      .from("nexus_participations")
+      .update({
+        placement: placement === "" || placement === null ? null : Number(placement),
+        kills: Number(kills) || 0,
+      })
+      .eq("id", id);
+    if (error) throw error;
+  }
+}
+
 // Redirect guard for pages that require a logged-in TO. Returns the session
 // if present; otherwise sends the browser to the login page and returns null.
 export async function requireSession() {

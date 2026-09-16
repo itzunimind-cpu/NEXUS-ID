@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Manage Roster</title>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE4; --bg-panel: #E8E1D5; --bg-card: #EDE7DC;
+    --border: #C9BFA8; --border-mid: #A89880;
+    --forest: #2C4A2E; --olive: #4E7C2F; --orange: #C85E0A; --red: #9B1C11;
+    --text-hero: #0C0A07; --text-body: #1C1A14; --text-dim: #6B6048;
+    --radius-sm: 2px; --radius-md: 3px; --radius-lg: 4px;
+    --font-display: 'Oswald', sans-serif; --font-body: 'Manrope', sans-serif; --font-mono: 'Lexend Deca', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text-body); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  a { text-decoration: none; }
+  input:focus { outline: none; border-color: var(--forest) !important; }
+  .search-input { width: 100%; padding: 12px 14px; background: var(--bg); color: var(--text-body); border: 1px solid var(--border-mid); border-radius: var(--radius-md); font-family: var(--font-body); font-size: 14px; transition: border-color .2s; }
+  .roster-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 56px; border-bottom: 1px solid var(--border); }
+  .roster-row:last-child { border-bottom: none; }
+  .result-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); }
+  .btn { font-family: var(--font-mono); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; border-radius: var(--radius-md); padding: 8px 14px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-body); }
+  .btn-primary { background: var(--forest); color: #fff; border-color: var(--forest); }
+  .btn-danger { background: transparent; color: var(--red); border-color: var(--red); }
+</style></head>
+<body>
+<div style="width:100%;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text-body);font-family:var(--font-body);">
+
+  <header style="flex-shrink:0;padding:clamp(24px,4vw,40px) clamp(20px,6vw,72px) clamp(16px,2vw,20px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:560px;display:flex;align-items:center;gap:12px;">
+      <a id="back-link" href="/team.html" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);flex-shrink:0;">
+        <iconify-icon icon="lucide:arrow-left" style="font-size:15px;"></iconify-icon>
+      </a>
+      <div>
+        <h1 id="team-title" style="font-family:var(--font-display);font-weight:700;font-size:20px;color:var(--text-hero);margin:0;">Manage Roster</h1>
+        <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-dim);margin:2px 0 0;">Roster Management</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" style="flex:1;padding:clamp(4px,1vw,8px) clamp(20px,6vw,72px) clamp(48px,6vw,72px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:560px;">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-dim);">Loading…</p>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+  import { supabase } from "/js/supabase-config.js";
+  import { requireSession, fetchMyToProfile, addTeamMember, removeTeamMember, createPlayer } from "/js/auth.js";
+
+  const content = document.getElementById("content");
+  const tmId = new URLSearchParams(window.location.search).get("id") || "";
+  document.getElementById("back-link").href = `/team.html?id=${encodeURIComponent(tmId)}`;
+
+  let team = null;
+  let profile = null;
+  let roster = [];
+  let searchTimer;
+
+  function wrap(inner) {
+    content.innerHTML = `<div style="width:100%;max-width:560px;">${inner}</div>`;
+  }
+
+  function notFound() {
+    wrap(`
+      <div style="padding-top:40px;display:flex;flex-direction:column;gap:8px;">
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--text-hero);margin:0;">Not Found</h1>
+        <p style="font-size:14px;color:var(--text-dim);margin:0;">No Nexus ID matches "${tmId}".</p>
+        <a href="/search.html" style="margin-top:8px;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.1em;">&larr; Back to search</a>
+      </div>`);
+  }
+
+  async function loadRoster() {
+    const { data } = await supabase
+      .from("nexus_team_members")
+      .select("id, joined_at, player_id, nexus_players(nx_id, real_name)")
+      .eq("team_id", team.id)
+      .is("left_at", null)
+      .order("joined_at", { ascending: true });
+    roster = (data || []).filter((m) => m.nexus_players);
+  }
+
+  function rosterHtml(canRemove) {
+    if (!roster.length) return `<p style="padding:16px 0;font-size:13px;color:var(--text-dim);">No active roster members yet.</p>`;
+    return `<div style="border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-card);overflow:hidden;">
+      ${roster.map((m) => {
+        const p = m.nexus_players;
+        return `
+        <div class="roster-row">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <iconify-icon icon="lucide:user" style="color:var(--text-dim);font-size:14px;"></iconify-icon>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+            <span style="font-size:14px;font-weight:700;color:var(--text-hero);">${p.real_name || p.nx_id}</span>
+            <span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">${p.nx_id}</span>
+          </div>
+          ${canRemove ? `<button class="btn btn-danger" data-remove="${m.id}">Remove</button>` : ""}
+        </div>`;
+      }).join("")}
+    </div>`;
+  }
+
+  function renderResults(results, container) {
+    if (!results.length) {
+      container.innerHTML = `
+        <div class="result-row" style="justify-content:space-between;">
+          <span style="font-size:13px;color:var(--text-dim);">No matching player.</span>
+          <button class="btn" id="create-player-btn">+ Create New Player</button>
+        </div>`;
+      return;
+    }
+    container.innerHTML = results.map((p) => `
+      <div class="result-row" style="justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+          <span style="font-size:13px;font-weight:700;color:var(--text-hero);">${p.real_name || p.nx_id}</span>
+          <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);">${p.nx_id}</span>
+        </div>
+        <button class="btn btn-primary" data-add="${p.id}">+ Add</button>
+      </div>`).join("");
+  }
+
+  async function searchPlayers(q) {
+    const [byId, byIgn] = await Promise.all([
+      supabase.from("nexus_players").select("id, nx_id, real_name").ilike("nx_id", `%${q}%`).limit(6),
+      supabase.from("nexus_player_game_accounts").select("nexus_players(id, nx_id, real_name)").ilike("in_game_name", `%${q}%`).limit(6),
+    ]);
+    const merged = new Map();
+    (byId.data || []).forEach((p) => merged.set(p.id, p));
+    (byIgn.data || []).forEach((row) => { if (row.nexus_players) merged.set(row.nexus_players.id, row.nexus_players); });
+    return Array.from(merged.values());
+  }
+
+  function renderPage() {
+    const canRemove = profile && team.created_by_to_id === profile.id;
+    document.getElementById("team-title").textContent = team.team_name;
+    wrap(`
+      <div style="display:flex;flex-direction:column;gap:24px;">
+        <p style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);margin:0;">${team.tm_id}</p>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <p style="font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--olive);margin:0;">Active Roster</p>
+          <div id="roster-list">${rosterHtml(canRemove)}</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <p style="font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--olive);margin:0;">Add Player</p>
+          <input type="text" id="player-search" class="search-input" placeholder="Search by Nexus ID or IGN" autocomplete="off">
+          <div id="search-results" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>`);
+
+    document.getElementById("roster-list").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-remove]");
+      if (!btn) return;
+      btn.disabled = true;
+      try {
+        await removeTeamMember({ membership_id: btn.getAttribute("data-remove") });
+        await loadRoster();
+        document.getElementById("roster-list").innerHTML = rosterHtml(canRemove);
+      } catch (err) {
+        alert(err.message || "Could not remove player.");
+        btn.disabled = false;
+      }
+    });
+
+    const searchInput = document.getElementById("player-search");
+    const resultsEl = document.getElementById("search-results");
+
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      const q = searchInput.value.trim();
+      if (q.length < 2) { resultsEl.innerHTML = ""; return; }
+      searchTimer = setTimeout(async () => {
+        const results = await searchPlayers(q);
+        renderResults(results, resultsEl);
+      }, 300);
+    });
+
+    resultsEl.addEventListener("click", async (e) => {
+      const addBtn = e.target.closest("[data-add]");
+      const createBtn = e.target.closest("#create-player-btn");
+      if (addBtn) {
+        addBtn.disabled = true;
+        try {
+          if (roster.some((m) => String(m.player_id) === addBtn.getAttribute("data-add"))) {
+            alert("That player is already on the active roster.");
+            addBtn.disabled = false;
+            return;
+          }
+          await addTeamMember({ team_id: team.id, player_id: Number(addBtn.getAttribute("data-add")) });
+          await loadRoster();
+          document.getElementById("roster-list").innerHTML = rosterHtml(canRemove);
+          searchInput.value = "";
+          resultsEl.innerHTML = "";
+        } catch (err) {
+          alert(err.message || "Could not add player.");
+          addBtn.disabled = false;
+        }
+      } else if (createBtn) {
+        const ign = prompt("In-game name (IGN)?");
+        if (!ign) return;
+        const game = prompt("Game (e.g. BGMI)?") || "BGMI";
+        const uid = prompt("In-game UID?");
+        if (!uid) return;
+        try {
+          const created = await createPlayer({ real_name: "", game, in_game_uid: uid, in_game_name: ign });
+          await addTeamMember({ team_id: team.id, player_id: created.id });
+          await loadRoster();
+          document.getElementById("roster-list").innerHTML = rosterHtml(canRemove);
+          searchInput.value = "";
+          resultsEl.innerHTML = "";
+        } catch (err) {
+          alert(err.message || "Could not create player.");
+        }
+      }
+    });
+  }
+
+  async function render() {
+    if (!tmId) { notFound(); return; }
+
+    const session = await requireSession();
+    if (!session) return;
+
+    const { data: teamData, error } = await supabase
+      .from("nexus_teams")
+      .select("id, tm_id, team_name, created_by_to_id")
+      .eq("tm_id", tmId)
+      .maybeSingle();
+    if (error || !teamData) { notFound(); return; }
+    team = teamData;
+
+    profile = await fetchMyToProfile();
+    if (!profile) { window.location.href = "/to-onboarding.html"; return; }
+
+    await loadRoster();
+    renderPage();
+  }
+
+  render();
+</script>
+</body></html>
