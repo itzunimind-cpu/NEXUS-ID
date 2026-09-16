@@ -125,7 +125,7 @@ export async function createTeam({ team_name }) {
 
 // Creates a new tournament (nexus_tournaments row). Matches/results/roster
 // are separate follow-up work — this only creates the tournament shell.
-export async function createTournament({ name, game, format, stage, start_date, end_date, max_players }) {
+export async function createTournament({ name, game, format, stage, prize_pool, start_date, end_date, max_players }) {
   const profile = await fetchMyToProfile();
   if (!profile) throw new Error("Complete TO registration first.");
 
@@ -136,6 +136,7 @@ export async function createTournament({ name, game, format, stage, start_date, 
       game,
       format: format || null,
       stage: stage || null,
+      prize_pool: prize_pool || null,
       start_date: start_date || null,
       end_date: end_date || null,
       max_players: max_players || null,
@@ -144,6 +145,16 @@ export async function createTournament({ name, game, format, stage, start_date, 
     .select("id, name, game")
     .single();
   if (error) throw error;
+
+  // Best-effort activity-log entry — the tournament is already created at this
+  // point, so a logging failure shouldn't surface as a tournament-creation error.
+  await supabase.from("nexus_activity_log").insert({
+    to_id: profile.id,
+    tournament_id: data.id,
+    event_type: "tournament_created",
+    detail: data.name,
+  });
+
   return data;
 }
 

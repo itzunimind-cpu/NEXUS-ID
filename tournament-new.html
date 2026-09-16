@@ -72,10 +72,18 @@
         </div>
       </div>
 
-      <div class="space-y-2">
-        <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Max Players</label>
-        <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
-          <input type="number" id="t_max_players" min="1" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. 64">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-2">
+          <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Max Players</label>
+          <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+            <input type="number" id="t_max_players" min="1" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. 64">
+          </div>
+        </div>
+        <div class="space-y-2">
+          <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Prize Pool (₹)</label>
+          <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+            <input type="number" id="t_prize_pool" min="0" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. 50000">
+          </div>
         </div>
       </div>
 
@@ -129,6 +137,7 @@
         start_date: document.getElementById("t_start").value,
         end_date: document.getElementById("t_end").value,
         max_players: document.getElementById("t_max_players").value ? Number(document.getElementById("t_max_players").value) : null,
+        prize_pool: document.getElementById("t_prize_pool").value ? Number(document.getElementById("t_prize_pool").value) : null,
       });
       document.getElementById("success-subtitle").textContent = `"${created.name}" is now in draft status.`;
       document.getElementById("success-modal").classList.remove("hidden");

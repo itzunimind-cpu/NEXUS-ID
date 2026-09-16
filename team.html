@@ -1,24 +1,71 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Team</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
-  body { font-family: 'Manrope', sans-serif; background-color: #F2EDE4; color: #1C1A14; -webkit-font-smoothing: antialiased; }
-  .font-display { font-family: 'Oswald', sans-serif; }
-  .font-mono { font-family: 'Lexend Deca', sans-serif; }
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Squad</title>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE4;
+    --bg-panel: #E8E1D5;
+    --bg-card: #EDE7DC;
+    --border: #C9BFA8;
+    --border-mid: #A89880;
+    --forest: #2C4A2E;
+    --olive: #4E7C2F;
+    --orange: #C85E0A;
+    --red: #9B1C11;
+    --text-hero: #0C0A07;
+    --text-body: #1C1A14;
+    --text-dim: #6B6048;
+    --radius-sm: 2px;
+    --radius-md: 3px;
+    --radius-lg: 4px;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+    --font-mono: 'Lexend Deca', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text-body); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  a { text-decoration: none; }
+  .tab { cursor: pointer; padding: 6px 2px; border-bottom: 2px solid transparent; }
+  .tab.active { border-bottom-color: var(--olive); }
+  .tab span { font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-dim); }
+  .tab.active span { color: var(--olive); }
+  .roster-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 60px; border-bottom: 1px solid var(--border); transition: background .15s ease; }
+  .roster-row:last-child { border-bottom: none; }
+  .roster-row:hover { background: var(--bg-panel); }
+  .tournament-card { position: relative; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); overflow: hidden; transition: border-color .15s ease; }
+  .tournament-card:hover { border-color: var(--border-mid); }
+  .tournament-head { cursor: pointer; position: relative; min-height: 100px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; overflow: hidden; }
+  .tournament-panel { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s ease, opacity .25s ease; }
+  .tournament-panel.open { max-height: 4000px; opacity: 1; }
+  .chevron { transition: transform .25s ease; }
+  .chevron.open { transform: rotate(180deg); }
 </style></head>
 <body>
-<div class="w-full min-h-screen flex flex-col bg-[#F2EDE4]">
+<div style="width:100%;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text-body);font-family:var(--font-body);">
 
-  <header class="shrink-0 pt-14 px-6 pb-4 bg-[#F2EDE4]">
-    <a href="/index.html" class="flex items-center gap-2 w-fit">
-      <div class="w-8 h-8 bg-[#C85E0A] flex items-center justify-center rounded"><span class="text-white font-bold text-lg leading-none">N</span></div>
-      <span class="font-display font-bold tracking-tighter text-xl uppercase italic text-[#0C0A07]">NexusID</span>
-    </a>
+  <header style="flex-shrink:0;padding:clamp(24px,4vw,40px) clamp(20px,6vw,72px) clamp(16px,2vw,20px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:560px;display:flex;align-items:center;gap:12px;">
+      <a href="/search.html" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);flex-shrink:0;">
+        <iconify-icon icon="lucide:arrow-left" style="font-size:15px;"></iconify-icon>
+      </a>
+      <a href="/index.html" style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;background:var(--orange);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-lg);flex-shrink:0;">
+          <iconify-icon icon="lucide:fingerprint" style="color:#fff;font-size:16px;"></iconify-icon>
+        </div>
+        <span style="font-family:var(--font-display);font-weight:600;letter-spacing:2px;font-size:19px;text-transform:uppercase;"><span style="color:var(--forest);">Nexus</span><span style="color:var(--orange);">ID</span></span>
+      </a>
+    </div>
   </header>
 
-  <main id="content" class="flex-1 px-6 py-4">
-    <p class="font-mono text-xs text-[#6B6048] uppercase tracking-widest">Loading…</p>
+  <main id="content" style="flex:1;padding:clamp(4px,1vw,8px) clamp(20px,6vw,72px) clamp(48px,6vw,72px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:560px;">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-dim);">Loading…</p>
+    </div>
   </main>
 
-  <footer class="shrink-0 pb-[34px] px-6 pt-6 bg-[#F2EDE4] border-t border-[#C9BFA8]/50">
-    <p class="font-mono text-[10px] text-[#6B6048]/50 uppercase tracking-[0.2em] font-medium text-center">Registry Infrastructure for Grassroots Esports</p>
+  <footer style="flex-shrink:0;padding:24px clamp(20px,6vw,72px) 34px;border-top:1px solid var(--border);display:flex;justify-content:center;">
+    <p style="font-family:var(--font-mono);font-size:10px;color:rgba(107,96,72,.5);text-transform:uppercase;letter-spacing:0.2em;font-weight:500;margin:0;">Registry Infrastructure for Grassroots Esports</p>
   </footer>
 </div>
 
@@ -27,14 +74,41 @@
 
   const content = document.getElementById("content");
   const tmId = new URLSearchParams(window.location.search).get("id") || "";
+  let activeTab = "roster";
+
+  const MAP_BG_VARIANTS = [
+    { scale: 1.25, rotate: "-6deg", pos: "20% 30%" },
+    { scale: 1.5, rotate: "5deg", pos: "80% 70%" },
+    { scale: 1.35, rotate: "-3.5deg", pos: "50% 15%" },
+    { scale: 1.6, rotate: "7deg", pos: "15% 80%" },
+    { scale: 1.42, rotate: "-8deg", pos: "75% 35%" },
+  ];
+
+  function mapImage(mapName) {
+    const key = (mapName || "").toLowerCase();
+    if (key.includes("mira")) return "/assets/maps/miramar_mid.jpg";
+    if (key.includes("san")) return "/assets/maps/sanhok_mid.jpg";
+    if (key.includes("rondo")) return "/assets/maps/rondo_mid.jpg";
+    return "/assets/maps/erangel_mid.jpg";
+  }
+
+  function placeColor(p) {
+    if (p === 1) return "var(--olive)";
+    if (p !== null && p <= 5) return "#fff";
+    return "rgba(255,255,255,.7)";
+  }
+
+  function wrap(inner) {
+    content.innerHTML = `<div style="width:100%;max-width:560px;">${inner}</div>`;
+  }
 
   function notFound() {
-    content.innerHTML = `
-      <div class="pt-10 space-y-2">
-        <h1 class="text-2xl font-display font-bold text-[#0C0A07]">Not Found</h1>
-        <p class="text-sm text-[#6B6048]">No Nexus ID matches "${tmId}".</p>
-        <a href="/search.html" class="inline-block mt-4 font-mono text-xs font-bold text-[#2C4A2E] uppercase tracking-widest">&larr; Back to search</a>
-      </div>`;
+    wrap(`
+      <div style="padding-top:40px;display:flex;flex-direction:column;gap:8px;">
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--text-hero);margin:0;">Not Found</h1>
+        <p style="font-size:14px;color:var(--text-dim);margin:0;">No Nexus ID matches "${tmId}".</p>
+        <a href="/search.html" style="margin-top:8px;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.1em;">&larr; Back to search</a>
+      </div>`);
   }
 
   async function render() {
@@ -48,46 +122,261 @@
 
     if (error || !team) { notFound(); return; }
 
-    const { data: members } = await supabase
-      .from("nexus_team_members")
-      .select("joined_at, nexus_players(nx_id, real_name, claimed)")
-      .eq("team_id", team.id)
-      .is("left_at", null)
-      .order("joined_at", { ascending: true });
+    const [{ data: allMemberships }, { data: rows }] = await Promise.all([
+      supabase.from("nexus_team_members")
+        .select("player_id, joined_at, left_at, nexus_players(nx_id, real_name)")
+        .eq("team_id", team.id)
+        .order("joined_at", { ascending: true }),
+      supabase.from("nexus_participations")
+        .select("match_id, player_id, placement, kills, nexus_matches(tournament_id, map, played_at, nexus_tournaments(name, game, stage))")
+        .eq("team_id", team.id),
+    ]);
 
-    const rosterHtml = (members && members.length)
-      ? members.map((m) => {
+    const memberships = (allMemberships || []).filter((m) => m.nexus_players);
+    const activeRoster = memberships.filter((m) => !m.left_at);
+
+    const participationRows = (rows || []).filter((p) => p.nexus_matches);
+    const matchIds = [...new Set(participationRows.map((p) => p.match_id))];
+
+    let squadKillsMap = new Map();
+    if (matchIds.length) {
+      const { data: squadRows } = await supabase
+        .from("nexus_match_squad_kills")
+        .select("match_id, squad_kills")
+        .eq("team_id", team.id)
+        .in("match_id", matchIds);
+      squadKillsMap = new Map((squadRows || []).map((r) => [r.match_id, r.squad_kills]));
+    }
+
+    // --- Per-player kills contributed while on this team ---
+    const killsByPlayer = new Map();
+    participationRows.forEach((p) => {
+      killsByPlayer.set(p.player_id, (killsByPlayer.get(p.player_id) || 0) + (p.kills || 0));
+    });
+
+    // --- Distinct matches this team played (dedupe the up-to-4 rows per match) ---
+    const matchSeen = new Map();
+    participationRows.forEach((p) => {
+      if (!matchSeen.has(p.match_id)) matchSeen.set(p.match_id, p.placement);
+    });
+    const totalMatches = matchSeen.size;
+    const placements = [...matchSeen.values()].filter((x) => x !== null && x !== undefined);
+    const avgPlace = placements.length ? Math.round(placements.reduce((a, b) => a + b, 0) / placements.length) : null;
+    const totalKills = [...new Set(matchIds)].reduce((a, mid) => a + (squadKillsMap.get(mid) || 0), 0);
+    const wins = placements.filter((p) => p === 1).length;
+    const winRate = totalMatches ? Math.round((wins / totalMatches) * 100) : 0;
+
+    // --- Roster join/leave/rejoin history (all membership rows, not just active) ---
+    const joinCountByPlayer = new Map();
+    const historyEvents = [];
+    memberships.forEach((m) => {
+      const p = m.nexus_players;
+      const priorJoins = joinCountByPlayer.get(m.player_id) || 0;
+      joinCountByPlayer.set(m.player_id, priorJoins + 1);
+      historyEvents.push({
+        date: m.joined_at, nxId: p.nx_id, realName: p.real_name,
+        action: priorJoins === 0 ? "joined" : "rejoined",
+        icon: priorJoins === 0 ? "lucide:log-in" : "lucide:rotate-ccw",
+        color: priorJoins === 0 ? "var(--olive)" : "var(--orange)",
+      });
+      if (m.left_at) {
+        historyEvents.push({
+          date: m.left_at, nxId: p.nx_id, realName: p.real_name,
+          action: "left", icon: "lucide:log-out", color: "var(--red)",
+        });
+      }
+    });
+    historyEvents.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    // --- Group tournament history by tournament -> day -> match ---
+    const tournamentsMap = new Map();
+    participationRows.forEach((p) => {
+      const m = p.nexus_matches;
+      const t = m.nexus_tournaments;
+      const tid = m.tournament_id;
+      if (!tournamentsMap.has(tid)) {
+        tournamentsMap.set(tid, { id: tid, name: t?.name || "Unknown Tournament", game: t?.game || "", stage: t?.stage || null, latest: m.played_at || "", matchIds: new Set(), days: new Map() });
+      }
+      const tour = tournamentsMap.get(tid);
+      if ((m.played_at || "") > tour.latest) tour.latest = m.played_at || tour.latest;
+      if (tour.matchIds.has(p.match_id)) return; // dedupe teammates sharing the same match
+      tour.matchIds.add(p.match_id);
+      const dayKey = m.played_at ? m.played_at.slice(0, 10) : "unscheduled";
+      if (!tour.days.has(dayKey)) tour.days.set(dayKey, []);
+      tour.days.get(dayKey).push({ map: m.map || "Unknown", placement: p.placement, squadKills: squadKillsMap.get(p.match_id) || 0 });
+    });
+
+    const tournaments = Array.from(tournamentsMap.values())
+      .sort((a, b) => (b.latest || "").localeCompare(a.latest || ""))
+      .map((t, ti) => {
+        const allT = Array.from(t.days.values()).flat();
+        const placementsInT = allT.map((m) => m.placement).filter((x) => x !== null && x !== undefined);
+        const bestPlace = placementsInT.length ? String(Math.min(...placementsInT)).padStart(2, "0") : "—";
+        const days = Array.from(t.days.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([key, matches], di) => ({
+            label: key === "unscheduled" ? "Unscheduled" : `Day ${di + 1}`,
+            date: key === "unscheduled" ? "" : new Date(key).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+            matches,
+          }));
+        return { ...t, bestPlace, dayCount: days.length, matchCount: allT.length, days, bg: MAP_BG_VARIANTS[ti % MAP_BG_VARIANTS.length] };
+      });
+
+    // --- Render ---
+    const stats = [
+      { label: "Matches", value: totalMatches },
+      { label: "Avg Place", value: avgPlace !== null ? `#${avgPlace}` : "—" },
+      { label: "Total Kills", value: totalKills },
+      { label: "Win Rate", value: `${winRate}%` },
+    ];
+    const statsHtml = stats.map((s, i) => `
+      <div style="border-top:1px solid var(--border);border-left:${i === 0 ? "none" : "1px solid var(--border)"};padding:16px 20px 20px;display:flex;flex-direction:column;gap:10px;">
+        <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);line-height:1.3;">${s.label}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.7rem,2vw + 1.2rem,2.1rem);color:var(--forest);line-height:1;">${s.value}</span>
+      </div>`).join("");
+
+    function rosterHtml() {
+      if (!activeRoster.length) return `<p style="padding:16px;font-size:13px;color:var(--text-dim);">No active roster members.</p>`;
+      return `<div style="border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-card);overflow:hidden;">
+        ${activeRoster.map((m) => {
           const p = m.nexus_players;
-          if (!p) return "";
-          const unclaimed = p.claimed
-            ? ""
-            : `<span class="w-1.5 h-1.5 rounded-full bg-[#9B1C11] inline-block ml-1.5"></span>`;
+          const kills = killsByPlayer.get(m.player_id) || 0;
           return `
-        <a href="/player.html?id=${encodeURIComponent(p.nx_id)}" class="flex justify-between items-center py-3 border-b border-[#C9BFA8]/30 last:border-0">
-          <div class="flex items-center">
-            <p class="text-sm text-[#1C1A14] font-medium">${p.real_name || p.nx_id}</p>
-            ${unclaimed}
+          <a href="/player.html?id=${encodeURIComponent(p.nx_id)}" class="roster-row">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--bg-panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <iconify-icon icon="lucide:user" style="color:var(--text-dim);font-size:15px;"></iconify-icon>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+              <span style="font-size:14px;font-weight:700;color:var(--text-hero);">${p.real_name || p.nx_id}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">${p.nx_id}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:40px;flex-shrink:0;">
+              <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--forest);line-height:1;">${kills}</span>
+              <span style="font-family:var(--font-mono);font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">Kills</span>
+            </div>
+            <iconify-icon icon="lucide:chevron-right" style="color:var(--text-dim);font-size:14px;flex-shrink:0;"></iconify-icon>
+          </a>`;
+        }).join("")}
+      </div>`;
+    }
+
+    function historyHtml() {
+      if (!historyEvents.length) return `<p style="padding:16px;font-size:13px;color:var(--text-dim);">No roster history yet.</p>`;
+      return `<div style="border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-card);max-height:244px;overflow-y:auto;">
+        ${historyEvents.map((h) => {
+          const d = h.date ? new Date(h.date) : null;
+          return `
+          <a href="/player.html?id=${encodeURIComponent(h.nxId)}" class="roster-row">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--bg-panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <iconify-icon icon="${h.icon}" style="color:${h.color};font-size:15px;"></iconify-icon>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+              <span style="font-size:14px;font-weight:700;color:var(--text-hero);">${h.realName || h.nxId}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">${h.nxId}</span>
+            </div>
+            <span style="font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${h.color};background:var(--bg-panel);border:1px solid var(--border);padding:3px 7px;border-radius:var(--radius-sm);flex-shrink:0;">${h.action}</span>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:40px;flex-shrink:0;">
+              <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--text-hero);line-height:1;">${d ? d.toLocaleDateString(undefined, { month: "short" }) : "—"}</span>
+              <span style="font-family:var(--font-mono);font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">${d ? d.getFullYear() : ""}</span>
+            </div>
+          </a>`;
+        }).join("")}
+      </div>`;
+    }
+
+    const tournamentsHtml = tournaments.length
+      ? tournaments.map((t) => `
+        <div class="tournament-card" style="margin-bottom:14px;">
+          <div class="tournament-head" data-toggle="t-${t.id}">
+            <div style="position:absolute;inset:0;background-image:url('${mapImage(t.days[0]?.matches[0]?.map)}');background-size:cover;background-position:${t.bg.pos};filter:blur(3.2px);transform:scale(${t.bg.scale}) rotate(${t.bg.rotate});"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(20,17,13,.92) 0%, rgba(20,17,13,.68) 55%, rgba(20,17,13,.3) 100%);"></div>
+            <div style="position:relative;display:flex;flex-direction:column;gap:4px;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--orange);">Best Placement #${t.bestPlace}</span>
+                ${t.stage ? `<span style="font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#fff;background:rgba(255,255,255,.15);padding:2px 6px;border-radius:var(--radius-sm);">${t.stage}</span>` : ""}
+              </div>
+              <span style="font-family:var(--font-body);font-weight:800;font-size:18px;color:#fff;line-height:1.25;letter-spacing:0.01em;">${t.name}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,.75);">${t.game}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;color:rgba(255,255,255,.85);">${t.dayCount} Day${t.dayCount === 1 ? "" : "s"} · ${t.matchCount} Match${t.matchCount === 1 ? "" : "es"}</span>
+            </div>
+            <iconify-icon class="chevron" data-chevron="t-${t.id}" icon="lucide:chevron-down" style="position:relative;color:rgba(255,255,255,.9);font-size:18px;flex-shrink:0;"></iconify-icon>
           </div>
-          <p class="font-mono text-[10px] text-[#6B6048]/70">${p.nx_id}</p>
-        </a>`;
-        }).join("")
-      : `<p class="text-xs text-[#6B6048]">No active roster members.</p>`;
+          <div class="tournament-panel" data-panel="t-${t.id}">
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;background:var(--bg-panel);border-top:1px solid var(--border);">
+              ${t.days.map((d) => `
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;align-items:baseline;gap:8px;">
+                    <span style="font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-hero);">${d.label}</span>
+                    ${d.date ? `<span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-dim);">${d.date}</span>` : ""}
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${d.matches.map((m) => `
+                      <div style="border-radius:var(--radius-md);border:1px solid var(--border);overflow:hidden;position:relative;min-height:64px;background-image:linear-gradient(100deg, rgba(15,13,10,.94) 0%, rgba(15,13,10,.82) 60%, rgba(15,13,10,.62) 100%), url('${mapImage(m.map)}');background-size:cover;background-position:center;display:flex;align-items:center;gap:10px;padding:10px 12px;">
+                        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                          <span style="font-size:13px;font-weight:700;color:#fff;">${m.map}</span>
+                          <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#F4A662;">Total Kills: ${m.squadKills}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:rgba(20,17,13,.55);border:1px solid rgba(255,255,255,.18);border-radius:var(--radius-sm);padding:5px 10px;">
+                          <div style="display:flex;flex-direction:column;align-items:center;min-width:26px;">
+                            <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:${placeColor(m.placement)};line-height:1;">${m.placement !== null && m.placement !== undefined ? "#" + m.placement : "—"}</span>
+                            <span style="font-family:var(--font-mono);font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(255,255,255,.75);">Place</span>
+                          </div>
+                        </div>
+                      </div>`).join("")}
+                  </div>
+                </div>`).join("")}
+            </div>
+          </div>
+        </div>`).join("")
+      : `<p style="font-size:13px;color:var(--text-dim);">No tournament history yet.</p>`;
 
-    content.innerHTML = `
-      <div class="pt-4 pb-8 space-y-3">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-display font-bold text-[#0C0A07] tracking-tight">${team.tm_id}</h1>
-          <span class="font-mono text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-[#C85E0A]/10 text-[#C85E0A] border border-[#C85E0A]/40">Team</span>
+    wrap(`
+      <div style="display:flex;flex-direction:column;gap:clamp(20px,2.6vw,28px);">
+        <div style="padding:clamp(20px,2.6vw,26px);border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--bg-card);display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-dim);">Squad</span>
+            <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,2vw + 1.4rem,2.4rem);color:var(--text-hero);margin:0;line-height:1;">${team.team_name}</h1>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid var(--border);">
+            <iconify-icon icon="lucide:tag" style="color:var(--text-dim);font-size:15px;flex-shrink:0;"></iconify-icon>
+            <span style="font-family:var(--font-mono);font-size:12px;color:var(--text-dim);letter-spacing:0.05em;">${team.tm_id}</span>
+            <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.05em;">Registered ${new Date(team.created_at).toLocaleDateString()}</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));margin:8px calc(-1 * clamp(20px,2.6vw,26px)) calc(-1 * clamp(20px,2.6vw,26px));">
+            ${statsHtml}
+          </div>
         </div>
-        <p class="text-sm text-[#1C1A14]/80">${team.team_name}</p>
-        <p class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest">Registered ${new Date(team.created_at).toLocaleDateString()}</p>
-      </div>
 
-      <div class="space-y-3 pb-8">
-        <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#4E7C2F]/80">Roster</p>
-        <div class="p-4 rounded-2xl bg-[#EDE7DC] border border-[#C9BFA8]/40">${rosterHtml}</div>
-      </div>
-    `;
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div class="tab ${activeTab === "roster" ? "active" : ""}" data-tab="roster"><span>Roster</span></div>
+            <div class="tab ${activeTab === "history" ? "active" : ""}" data-tab="history" style="padding:6px 10px;"><span>History</span></div>
+          </div>
+          <div id="tab-content">${activeTab === "roster" ? rosterHtml() : historyHtml()}</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <p style="font-family:var(--font-mono);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.16em;color:var(--olive);margin:0;">Tournament History</p>
+          <div>${tournamentsHtml}</div>
+        </div>
+      </div>`);
+
+    content.querySelectorAll("[data-tab]").forEach((tabEl) => {
+      tabEl.addEventListener("click", () => {
+        activeTab = tabEl.getAttribute("data-tab");
+        content.querySelectorAll("[data-tab]").forEach((el) => el.classList.toggle("active", el === tabEl));
+        document.getElementById("tab-content").innerHTML = activeTab === "roster" ? rosterHtml() : historyHtml();
+      });
+    });
+    content.querySelectorAll("[data-toggle]").forEach((head) => {
+      head.addEventListener("click", () => {
+        const key = head.getAttribute("data-toggle");
+        content.querySelector(`[data-panel="${key}"]`).classList.toggle("open");
+        content.querySelector(`[data-chevron="${key}"]`).classList.toggle("open");
+      });
+    });
   }
 
   render();

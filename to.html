@@ -1,24 +1,70 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Organizer</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
-  body { font-family: 'Manrope', sans-serif; background-color: #F2EDE4; color: #1C1A14; -webkit-font-smoothing: antialiased; }
-  .font-display { font-family: 'Oswald', sans-serif; }
-  .font-mono { font-family: 'Lexend Deca', sans-serif; }
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NexusID — Organizer</title>
+<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Lexend+Deca:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2EDE4;
+    --bg-panel: #E8E1D5;
+    --bg-card: #EDE7DC;
+    --border: #C9BFA8;
+    --border-mid: #A89880;
+    --forest: #2C4A2E;
+    --olive: #4E7C2F;
+    --orange: #C85E0A;
+    --red: #9B1C11;
+    --text-hero: #0C0A07;
+    --text-body: #1C1A14;
+    --text-dim: #6B6048;
+    --radius-sm: 2px;
+    --radius-md: 3px;
+    --radius-lg: 4px;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Manrope', sans-serif;
+    --font-mono: 'Lexend Deca', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text-body); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  a { text-decoration: none; }
+  .tab { cursor: pointer; padding: 6px 2px; border-bottom: 2px solid transparent; }
+  .tab.active { border-bottom-color: var(--olive); }
+  .tab span { font-family: var(--font-mono); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-dim); }
+  .tab.active span { color: var(--olive); }
+  .activity-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 60px; border-bottom: 1px solid var(--border); }
+  .activity-row:last-child { border-bottom: none; }
+  .tournament-card { position: relative; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card); overflow: hidden; transition: border-color .15s ease; }
+  .tournament-card:hover { border-color: var(--border-mid); }
+  .tournament-head { cursor: pointer; position: relative; min-height: 100px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; overflow: hidden; }
+  .tournament-panel { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s ease, opacity .25s ease; }
+  .tournament-panel.open { max-height: 2000px; opacity: 1; }
+  .chevron { transition: transform .25s ease; }
+  .chevron.open { transform: rotate(180deg); }
 </style></head>
 <body>
-<div class="w-full min-h-screen flex flex-col bg-[#F2EDE4]">
+<div style="width:100%;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text-body);font-family:var(--font-body);">
 
-  <header class="shrink-0 pt-14 px-6 pb-4 bg-[#F2EDE4]">
-    <a href="/index.html" class="flex items-center gap-2 w-fit">
-      <div class="w-8 h-8 bg-[#C85E0A] flex items-center justify-center rounded"><span class="text-white font-bold text-lg leading-none">N</span></div>
-      <span class="font-display font-bold tracking-tighter text-xl uppercase italic text-[#0C0A07]">NexusID</span>
-    </a>
+  <header style="flex-shrink:0;padding:clamp(24px,4vw,40px) clamp(20px,6vw,72px) clamp(16px,2vw,20px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:560px;display:flex;align-items:center;gap:12px;">
+      <a href="/search.html" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-md);background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);flex-shrink:0;">
+        <iconify-icon icon="lucide:arrow-left" style="font-size:15px;"></iconify-icon>
+      </a>
+      <a href="/index.html" style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;background:var(--orange);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-lg);flex-shrink:0;">
+          <iconify-icon icon="lucide:fingerprint" style="color:#fff;font-size:16px;"></iconify-icon>
+        </div>
+        <span style="font-family:var(--font-display);font-weight:600;letter-spacing:2px;font-size:19px;text-transform:uppercase;"><span style="color:var(--forest);">Nexus</span><span style="color:var(--orange);">ID</span></span>
+      </a>
+    </div>
   </header>
 
-  <main id="content" class="flex-1 px-6 py-4">
-    <p class="font-mono text-xs text-[#6B6048] uppercase tracking-widest">Loading…</p>
+  <main id="content" style="flex:1;padding:clamp(4px,1vw,8px) clamp(20px,6vw,72px) clamp(48px,6vw,72px);display:flex;justify-content:center;">
+    <div style="width:100%;max-width:560px;">
+      <p style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-dim);">Loading…</p>
+    </div>
   </main>
 
-  <footer class="shrink-0 pb-[34px] px-6 pt-6 bg-[#F2EDE4] border-t border-[#C9BFA8]/50">
-    <p class="font-mono text-[10px] text-[#6B6048]/50 uppercase tracking-[0.2em] font-medium text-center">Registry Infrastructure for Grassroots Esports</p>
+  <footer style="flex-shrink:0;padding:24px clamp(20px,6vw,72px) 34px;border-top:1px solid var(--border);display:flex;justify-content:center;">
+    <p style="font-family:var(--font-mono);font-size:10px;color:rgba(107,96,72,.5);text-transform:uppercase;letter-spacing:0.2em;font-weight:500;margin:0;">Registry Infrastructure for Grassroots Esports</p>
   </footer>
 </div>
 
@@ -27,14 +73,47 @@
 
   const content = document.getElementById("content");
   const toId = new URLSearchParams(window.location.search).get("id") || "";
+  let activeTab = "hosted";
+
+  const MAP_BG_VARIANTS = [
+    { scale: 1.25, rotate: "-6deg", pos: "20% 30%" },
+    { scale: 1.5, rotate: "5deg", pos: "80% 70%" },
+    { scale: 1.35, rotate: "-3.5deg", pos: "50% 15%" },
+    { scale: 1.6, rotate: "7deg", pos: "15% 80%" },
+    { scale: 1.42, rotate: "-8deg", pos: "75% 35%" },
+  ];
+
+  const ACTIVITY_META = {
+    tournament_created: { icon: "lucide:plus", color: "var(--olive)", tag: "Created", title: "Created tournament" },
+    registrations_opened: { icon: "lucide:door-open", color: "var(--orange)", tag: "Open", title: "Opened registrations" },
+    registrations_closed: { icon: "lucide:lock", color: "var(--red)", tag: "Closed", title: "Closed registrations" },
+    results_published: { icon: "lucide:flag", color: "var(--olive)", tag: "Result", title: "Published results" },
+  };
+
+  function mapImage(mapName) {
+    const key = (mapName || "").toLowerCase();
+    if (key.includes("mira")) return "/assets/maps/miramar_mid.jpg";
+    if (key.includes("san")) return "/assets/maps/sanhok_mid.jpg";
+    if (key.includes("rondo")) return "/assets/maps/rondo_mid.jpg";
+    return "/assets/maps/erangel_mid.jpg";
+  }
+
+  function formatPrize(n) {
+    if (n === null || n === undefined) return null;
+    return `₹${Number(n).toLocaleString("en-IN")}`;
+  }
+
+  function wrap(inner) {
+    content.innerHTML = `<div style="width:100%;max-width:560px;">${inner}</div>`;
+  }
 
   function notFound() {
-    content.innerHTML = `
-      <div class="pt-10 space-y-2">
-        <h1 class="text-2xl font-display font-bold text-[#0C0A07]">Not Found</h1>
-        <p class="text-sm text-[#6B6048]">No Nexus ID matches "${toId}".</p>
-        <a href="/search.html" class="inline-block mt-4 font-mono text-xs font-bold text-[#2C4A2E] uppercase tracking-widest">&larr; Back to search</a>
-      </div>`;
+    wrap(`
+      <div style="padding-top:40px;display:flex;flex-direction:column;gap:8px;">
+        <h1 style="font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--text-hero);margin:0;">Not Found</h1>
+        <p style="font-size:14px;color:var(--text-dim);margin:0;">No Nexus ID matches "${toId}".</p>
+        <a href="/search.html" style="margin-top:8px;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--forest);text-transform:uppercase;letter-spacing:0.1em;">&larr; Back to search</a>
+      </div>`);
   }
 
   async function render() {
@@ -48,53 +127,220 @@
 
     if (error || !to) { notFound(); return; }
 
-    const { data: tournaments } = await supabase
-      .from("nexus_tournaments")
-      .select("id, name, game, created_at")
-      .eq("created_by_to_id", to.id)
-      .order("created_at", { ascending: false });
+    const [{ data: rawTournaments }, { data: activity }] = await Promise.all([
+      supabase.from("nexus_tournaments")
+        .select("id, name, game, stage, status, prize_pool, created_at")
+        .eq("created_by_to_id", to.id)
+        .order("created_at", { ascending: false }),
+      supabase.from("nexus_activity_log")
+        .select("event_type, detail, created_at")
+        .eq("to_id", to.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
 
-    const tournamentsHtml = (tournaments && tournaments.length)
-      ? tournaments.map((t) => `
-        <div class="p-4 rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60">
-          <div class="flex justify-between items-start mb-1">
-            <p class="text-sm font-display font-bold text-[#0C0A07]">${t.name}</p>
-            <span class="font-mono text-[9px] font-bold uppercase tracking-widest text-[#6B6048]">${t.game}</span>
+    const tournamentList = rawTournaments || [];
+    const tournamentIds = tournamentList.map((t) => t.id);
+
+    let matches = [];
+    let participations = [];
+    if (tournamentIds.length) {
+      const { data: matchRows } = await supabase
+        .from("nexus_matches")
+        .select("id, tournament_id, map, played_at")
+        .in("tournament_id", tournamentIds);
+      matches = matchRows || [];
+      const matchIds = matches.map((m) => m.id);
+      if (matchIds.length) {
+        const { data: partRows } = await supabase
+          .from("nexus_participations")
+          .select("match_id, team_id, placement")
+          .in("match_id", matchIds);
+        participations = partRows || [];
+      }
+    }
+
+    const matchesByTournament = new Map();
+    matches.forEach((m) => {
+      if (!matchesByTournament.has(m.tournament_id)) matchesByTournament.set(m.tournament_id, []);
+      matchesByTournament.get(m.tournament_id).push(m);
+    });
+    const partsByMatch = new Map();
+    participations.forEach((p) => {
+      if (!partsByMatch.has(p.match_id)) partsByMatch.set(p.match_id, []);
+      partsByMatch.get(p.match_id).push(p);
+    });
+
+    const championTeamIds = new Set();
+    const tournaments = tournamentList.map((t, ti) => {
+      const tMatches = (matchesByTournament.get(t.id) || []).slice().sort((a, b) => (a.played_at || "").localeCompare(b.played_at || "") || a.id - b.id);
+      const dayCount = new Set(tMatches.map((m) => (m.played_at ? m.played_at.slice(0, 10) : `unscheduled-${m.id}`))).size;
+      const matchCount = tMatches.length;
+      const maps = [...new Set(tMatches.map((m) => m.map).filter(Boolean))].join(", ") || "—";
+      const squadIds = new Set();
+      tMatches.forEach((m) => (partsByMatch.get(m.id) || []).forEach((p) => { if (p.team_id) squadIds.add(p.team_id); }));
+
+      // Best-effort "champion": the team placing #1 in this tournament's chronologically
+      // last match. No true final-standings concept exists in the schema (see
+      // nexus_player_tournament_summary's comment) — this is a heuristic, not a
+      // verified result, and can be wrong for point-aggregate tournament formats.
+      let championTeamId = null;
+      const lastMatch = tMatches[tMatches.length - 1];
+      if (lastMatch) {
+        const winner = (partsByMatch.get(lastMatch.id) || []).find((p) => p.placement === 1);
+        if (winner) { championTeamId = winner.team_id; championTeamIds.add(winner.team_id); }
+      }
+
+      return {
+        id: t.id, name: t.name, game: t.game, stage: t.stage, status: t.status,
+        prizePool: formatPrize(t.prize_pool), dayCount, matchCount, maps,
+        squadCount: squadIds.size, championTeamId, firstMap: tMatches[0]?.map,
+        bg: MAP_BG_VARIANTS[ti % MAP_BG_VARIANTS.length],
+      };
+    });
+
+    let teamNames = new Map();
+    if (championTeamIds.size) {
+      const { data: teamRows } = await supabase.from("nexus_teams").select("id, team_name").in("id", [...championTeamIds]);
+      teamNames = new Map((teamRows || []).map((t) => [t.id, t.team_name]));
+    }
+
+    // --- Stats ---
+    const totalTournaments = tournaments.length;
+    const totalMatches = tournaments.reduce((a, t) => a + t.matchCount, 0);
+    const totalSquads = tournaments.reduce((a, t) => a + t.squadCount, 0);
+    const avgSquads = totalTournaments ? Math.round(totalSquads / totalTournaments) : 0;
+
+    const stats = [
+      { label: "Tournaments", value: totalTournaments },
+      { label: "Total Matches", value: totalMatches },
+      { label: "Avg Squads", value: avgSquads },
+      { label: "Total Squads", value: totalSquads },
+    ];
+    const statsHtml = stats.map((s, i) => `
+      <div style="border-top:1px solid var(--border);border-left:${i === 0 ? "none" : "1px solid var(--border)"};padding:16px 20px 20px;display:flex;flex-direction:column;gap:10px;">
+        <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);line-height:1.3;">${s.label}</span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.7rem,2vw + 1.2rem,2.1rem);color:var(--forest);line-height:1;">${s.value}</span>
+      </div>`).join("");
+
+    function hostedHtml() {
+      if (!tournaments.length) return `<p style="font-size:13px;color:var(--text-dim);">No tournaments run yet.</p>`;
+      return tournaments.map((t) => `
+        <div class="tournament-card" style="margin-bottom:14px;">
+          <div class="tournament-head" data-toggle="t-${t.id}">
+            <div style="position:absolute;inset:0;background-image:url('${mapImage(t.firstMap)}');background-size:cover;background-position:${t.bg.pos};filter:blur(3.2px);transform:scale(${t.bg.scale}) rotate(${t.bg.rotate});"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(20,17,13,.92) 0%, rgba(20,17,13,.68) 55%, rgba(20,17,13,.3) 100%);"></div>
+            <div style="position:relative;display:flex;flex-direction:column;gap:4px;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--orange);">${t.status}</span>
+                ${t.stage ? `<span style="font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#fff;background:rgba(255,255,255,.15);padding:2px 6px;border-radius:var(--radius-sm);">${t.stage}</span>` : ""}
+              </div>
+              <span style="font-family:var(--font-body);font-weight:800;font-size:18px;color:#fff;line-height:1.25;letter-spacing:0.01em;">${t.name}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,.75);">${t.game}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;font-weight:700;color:rgba(255,255,255,.85);">${t.dayCount} Day${t.dayCount === 1 ? "" : "s"} · ${t.squadCount} Squad${t.squadCount === 1 ? "" : "s"} · ${t.matchCount} Match${t.matchCount === 1 ? "" : "es"}</span>
+            </div>
+            <iconify-icon class="chevron" data-chevron="t-${t.id}" icon="lucide:chevron-down" style="position:relative;color:rgba(255,255,255,.9);font-size:18px;flex-shrink:0;"></iconify-icon>
           </div>
-          <p class="font-mono text-[10px] text-[#6B6048]/70 uppercase tracking-widest">${new Date(t.created_at).toLocaleDateString()}</p>
-        </div>`).join("")
-      : `<p class="text-xs text-[#6B6048]">No tournaments run yet.</p>`;
-
-    content.innerHTML = `
-      <div class="pt-4 pb-8 space-y-3">
-        <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-display font-bold text-[#0C0A07] tracking-tight">${to.to_id}</h1>
-          <span class="font-mono text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-[#2C4A2E]/10 text-[#2C4A2E] border border-[#2C4A2E]/25">Organizer</span>
-        </div>
-        <p class="text-sm text-[#1C1A14]/80">${to.organisation_name}</p>
-        <p class="font-mono text-[10px] text-[#6B6048]/60 uppercase tracking-widest">Registered ${new Date(to.created_at).toLocaleDateString()}</p>
-      </div>
-
-      <div class="space-y-3 pb-8">
-        <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#4E7C2F]/80">Profile</p>
-        <div class="p-4 rounded-2xl bg-[#EDE7DC] border border-[#C9BFA8]/40 space-y-3">
-          <div class="flex justify-between items-center py-1">
-            <p class="text-xs text-[#6B6048]">In-Game Name</p>
-            <p class="text-sm text-[#1C1A14] font-medium">${to.to_ign}</p>
+          <div class="tournament-panel" data-panel="t-${t.id}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--bg-panel);border-top:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <iconify-icon icon="lucide:trophy" style="color:var(--olive);font-size:14px;flex-shrink:0;"></iconify-icon>
+                <span style="font-size:13px;color:var(--text-hero);font-weight:600;">Champion: ${t.championTeamId ? (teamNames.get(t.championTeamId) || "Unknown Squad") : "—"}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <iconify-icon icon="lucide:map" style="color:var(--text-dim);font-size:14px;flex-shrink:0;"></iconify-icon>
+                <span style="font-size:12px;color:var(--text-body);">Maps: ${t.maps}</span>
+              </div>
+              ${t.prizePool ? `
+              <div style="display:flex;align-items:center;gap:10px;">
+                <iconify-icon icon="lucide:banknote" style="color:var(--text-dim);font-size:14px;flex-shrink:0;"></iconify-icon>
+                <span style="font-size:12px;color:var(--text-body);">Prize Pool: ${t.prizePool}</span>
+              </div>` : ""}
+            </div>
           </div>
-          ${to.to_real_name ? `
-          <div class="flex justify-between items-center py-1 border-t border-[#C9BFA8]/30">
-            <p class="text-xs text-[#6B6048]">Name</p>
-            <p class="text-sm text-[#1C1A14] font-medium">${to.to_real_name}</p>
-          </div>` : ""}
-        </div>
-      </div>
+        </div>`).join("");
+    }
 
-      <div class="space-y-3 pb-8">
-        <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#4E7C2F]/80">Tournaments Run</p>
-        <div class="space-y-3">${tournamentsHtml}</div>
-      </div>
-    `;
+    function activityHtml() {
+      const rows = activity || [];
+      if (!rows.length) return `<p style="padding:16px;font-size:13px;color:var(--text-dim);">No recorded activity yet.</p>`;
+      return `<div style="border-radius:var(--radius-md);border:1px solid var(--border);background:var(--bg-card);overflow:hidden;">
+        ${rows.map((a) => {
+          const meta = ACTIVITY_META[a.event_type] || { icon: "lucide:activity", color: "var(--text-dim)", tag: a.event_type };
+          const d = a.created_at ? new Date(a.created_at) : null;
+          return `
+          <div class="activity-row">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--bg-panel);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <iconify-icon icon="${meta.icon}" style="color:${meta.color};font-size:15px;"></iconify-icon>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+              <span style="font-size:14px;font-weight:700;color:var(--text-hero);">${meta.title}</span>
+              ${a.detail ? `<span style="font-family:var(--font-mono);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">${a.detail}</span>` : ""}
+            </div>
+            <span style="font-family:var(--font-mono);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${meta.color};background:var(--bg-panel);border:1px solid var(--border);padding:3px 7px;border-radius:var(--radius-sm);flex-shrink:0;">${meta.tag}</span>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:40px;flex-shrink:0;">
+              <span style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--text-hero);line-height:1;">${d ? d.toLocaleDateString(undefined, { month: "short" }) : "—"}</span>
+              <span style="font-family:var(--font-mono);font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);">${d ? d.getFullYear() : ""}</span>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`;
+    }
+
+    wrap(`
+      <div style="display:flex;flex-direction:column;gap:clamp(20px,2.6vw,28px);">
+        <div style="padding:clamp(20px,2.6vw,26px);border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--bg-card);display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-family:var(--font-mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--text-dim);">Organiser</span>
+            <h1 style="font-family:var(--font-display);font-weight:700;font-size:clamp(1.8rem,2vw + 1.4rem,2.4rem);color:var(--text-hero);margin:0;line-height:1;">${to.organisation_name}</h1>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px;border-top:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;padding-top:12px;">
+              <iconify-icon icon="lucide:gamepad-2" style="color:var(--text-dim);font-size:15px;flex-shrink:0;"></iconify-icon>
+              <span style="font-size:15px;font-weight:700;color:var(--text-hero);">${to.to_ign}</span>
+              <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);letter-spacing:0.05em;">${to.to_id}</span>
+            </div>
+            ${to.to_real_name ? `
+            <div style="display:flex;align-items:center;gap:10px;">
+              <iconify-icon icon="lucide:user" style="color:var(--text-dim);font-size:15px;flex-shrink:0;"></iconify-icon>
+              <span style="font-size:13px;color:var(--text-body);">${to.to_real_name}</span>
+            </div>` : ""}
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));margin:8px calc(-1 * clamp(20px,2.6vw,26px)) calc(-1 * clamp(20px,2.6vw,26px));">
+            ${statsHtml}
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div class="tab ${activeTab === "hosted" ? "active" : ""}" data-tab="hosted"><span>Hosted</span></div>
+            <div class="tab ${activeTab === "activity" ? "active" : ""}" data-tab="activity" style="padding:6px 10px;"><span>Activity</span></div>
+          </div>
+          <div id="tab-content">${activeTab === "hosted" ? hostedHtml() : activityHtml()}</div>
+        </div>
+      </div>`);
+
+    function bindToggles() {
+      content.querySelectorAll("[data-toggle]").forEach((head) => {
+        head.addEventListener("click", () => {
+          const key = head.getAttribute("data-toggle");
+          content.querySelector(`[data-panel="${key}"]`).classList.toggle("open");
+          content.querySelector(`[data-chevron="${key}"]`).classList.toggle("open");
+        });
+      });
+    }
+    bindToggles();
+
+    content.querySelectorAll("[data-tab]").forEach((tabEl) => {
+      tabEl.addEventListener("click", () => {
+        activeTab = tabEl.getAttribute("data-tab");
+        content.querySelectorAll("[data-tab]").forEach((el) => el.classList.toggle("active", el === tabEl));
+        document.getElementById("tab-content").innerHTML = activeTab === "hosted" ? hostedHtml() : activityHtml();
+        if (activeTab === "hosted") bindToggles();
+      });
+    });
   }
 
   render();
