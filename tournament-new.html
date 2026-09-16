@@ -50,6 +50,13 @@
         </div>
       </div>
 
+      <div class="space-y-2">
+        <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Stage</label>
+        <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+          <input type="text" id="t_stage" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. Qualifiers, Grand Finals">
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div class="space-y-2">
           <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Start Date</label>
@@ -118,6 +125,7 @@
         name: document.getElementById("t_name").value.trim(),
         game: document.getElementById("t_game").value,
         format: document.getElementById("t_format").value.trim(),
+        stage: document.getElementById("t_stage").value.trim(),
         start_date: document.getElementById("t_start").value,
         end_date: document.getElementById("t_end").value,
         max_players: document.getElementById("t_max_players").value ? Number(document.getElementById("t_max_players").value) : null,

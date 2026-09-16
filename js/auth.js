@@ -125,7 +125,7 @@ export async function createTeam({ team_name }) {
 
 // Creates a new tournament (nexus_tournaments row). Matches/results/roster
 // are separate follow-up work — this only creates the tournament shell.
-export async function createTournament({ name, game, format, start_date, end_date, max_players }) {
+export async function createTournament({ name, game, format, stage, start_date, end_date, max_players }) {
   const profile = await fetchMyToProfile();
   if (!profile) throw new Error("Complete TO registration first.");
 
@@ -135,6 +135,7 @@ export async function createTournament({ name, game, format, start_date, end_dat
       name,
       game,
       format: format || null,
+      stage: stage || null,
       start_date: start_date || null,
       end_date: end_date || null,
       max_players: max_players || null,
