@@ -251,6 +251,12 @@ Format: **Decision → Reasoning → Reversible?**
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-17 — Confirmed: a TO and a player may share the same in-game UID
+**Decision:** No schema change — confirmed, by inspection, that `nexus_tos.to_uid` and `nexus_player_game_accounts.in_game_uid` are allowed to hold the same value for the same real person. This is intentional, not an oversight, and must not be "fixed" into a cross-table uniqueness constraint later.
+**Reasoning:** `nexus_tos.to_uid` has no uniqueness constraint at all (not even among TOs, and it isn't scoped to a `game` column). `nexus_player_game_accounts.in_game_uid` is only unique *per game, among players* (`nexus_player_game_accounts_uid_unique_per_game`) — that constraint exists purely as the anti-duplicate-player mechanism (2026-09-05), with zero relationship to the TO table. There is no FK, check, or trigger linking the two. Moti confirmed this is the desired behavior: a TO is very often also a player in real life, using the same BGMI UID for both roles, and the product should not force them to fake a second UID just to organize tournaments.
+**Reversible?** Yes — if a future need arises to flag "this TO is also this player" as an explicit link (e.g. to unify their public profiles), that would be a new, additive feature, not a constraint tightening.
+**Supersedes:** None.
+
 ### 2026-09-16 — Team roster management + tournament editor: three scope calls
 **Decision:** Building the first real write-UI for `nexus_team_members`/`nexus_matches`/`nexus_participations` surfaced three forks, all confirmed by Moti:
   1. **Squad-based batch result entry, not one-row-at-a-time.** A TO picks an existing team, its active roster auto-loads, and they enter one placement for the whole squad plus a kills value per member — one submit inserts a `nexus_participations` row per player. Matches how a BGMI scoreboard is actually read (per-squad placement, per-player kills), not how the schema happens to store it (one row per player).
