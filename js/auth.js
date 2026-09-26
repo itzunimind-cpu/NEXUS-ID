@@ -247,6 +247,37 @@ export async function updateParticipations({ updates }) {
   }
 }
 
+// Generates a short-lived (15 min) WhatsApp linking code for the current TO.
+// The TO sends this code from their phone to the bot to bind
+// nexus_tos.whatsapp_phone_e164 — the code is only ever consumed server-side
+// by the WhatsApp webhook (service role), never by a client UPDATE (see
+// 0005_whatsapp_phone_linking.sql).
+export async function generateWaLinkCode() {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+
+  const { data, error } = await supabase
+    .from("nexus_wa_link_codes")
+    .insert({ to_id: profile.id })
+    .select("code, expires_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Returns the current TO's linked WhatsApp number, or null if not linked yet.
+export async function fetchMyWaLinkStatus() {
+  const session = await getSession();
+  if (!session) return null;
+  const { data, error } = await supabase
+    .from("nexus_tos")
+    .select("whatsapp_phone_e164")
+    .eq("auth_user_id", session.user.id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.whatsapp_phone_e164 || null;
+}
+
 // Redirect guard for pages that require a logged-in TO. Returns the session
 // if present; otherwise sends the browser to the login page and returns null.
 export async function requireSession() {

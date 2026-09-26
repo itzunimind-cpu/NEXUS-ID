@@ -42,12 +42,28 @@
         <span class="font-bold uppercase tracking-[0.1em] text-sm">Create Tournament</span>
         <span class="text-[11px] font-normal text-[#6B6048] normal-case tracking-normal">Set up a new event</span>
       </a>
+
+      <div id="wa-linked-card" class="hidden p-5 rounded-2xl bg-[#E8E1D5] border border-[#C9BFA8]/60 space-y-1">
+        <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#4E7C2F]">WhatsApp Connected</p>
+        <p id="wa-linked-number" class="text-sm text-[#1C1A14] font-medium"></p>
+      </div>
+
+      <button id="wa-connect-btn" class="font-mono w-full flex flex-col items-center gap-1 text-center py-5 bg-[#E8E1D5] border border-[#C9BFA8]/60 text-[#1C1A14] rounded-xl transition-all btn-active">
+        <span class="font-bold uppercase tracking-[0.1em] text-sm">Connect WhatsApp</span>
+        <span class="text-[11px] font-normal text-[#6B6048] normal-case tracking-normal">Register/manage tournaments from your phone</span>
+      </button>
+
+      <div id="wa-code-panel" class="hidden p-5 rounded-2xl bg-[#2C4A2E] text-white space-y-2 text-center">
+        <p class="text-[11px] font-normal text-white/70">Send this code to the NexusID WhatsApp number within 15 minutes:</p>
+        <p id="wa-code-value" class="font-display text-3xl font-bold tracking-widest"></p>
+        <p id="wa-code-expiry" class="text-[11px] font-normal text-white/70"></p>
+      </div>
     </div>
   </main>
 </div>
 
 <script type="module">
-  import { requireSession, fetchMyToProfile, signOut } from "/js/auth.js";
+  import { requireSession, fetchMyToProfile, signOut, generateWaLinkCode, fetchMyWaLinkStatus } from "/js/auth.js";
 
   (async () => {
     const session = await requireSession();
@@ -61,11 +77,30 @@
     document.getElementById("to-id").textContent = profile.to_id;
     document.getElementById("profile-ign").textContent = profile.to_ign;
     document.getElementById("profile-created").textContent = new Date(profile.created_at).toLocaleDateString();
+
+    const linkedNumber = await fetchMyWaLinkStatus();
+    if (linkedNumber) {
+      document.getElementById("wa-linked-number").textContent = linkedNumber;
+      document.getElementById("wa-linked-card").classList.remove("hidden");
+      document.getElementById("wa-connect-btn").classList.add("hidden");
+    }
   })();
 
   document.getElementById("sign-out-btn").addEventListener("click", async () => {
     await signOut();
     window.location.href = "/to-login.html";
+  });
+
+  document.getElementById("wa-connect-btn").addEventListener("click", async () => {
+    try {
+      const { code, expires_at } = await generateWaLinkCode();
+      document.getElementById("wa-code-value").textContent = code;
+      document.getElementById("wa-code-expiry").textContent =
+        `Expires at ${new Date(expires_at).toLocaleTimeString()}`;
+      document.getElementById("wa-code-panel").classList.remove("hidden");
+    } catch (err) {
+      alert(err.message || "Couldn't generate a code — try again.");
+    }
   });
 </script>
 </body></html>
