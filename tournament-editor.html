@@ -572,7 +572,7 @@
     regs.sort((a, b) => order[a.status] - order[b.status]);
     list.innerHTML = regs.map((r) => {
       const players = r.nexus_tournament_registration_members
-        .map((p) => `${esc(p.player_ign)} <span style="color:var(--text-dim);">${esc(p.player_uid)}${p.player_id ? " · Nexus ID" : ""}</span>`)
+        .map((p) => `${esc(p.player_ign)} <span style="color:var(--text-dim);">${p.player_uid ? esc(p.player_uid) : "no UID"}${p.player_id ? " · Nexus ID" : ""}</span>`)
         .join("<br>");
       const actions = r.status === "pending"
         ? `<div style="display:flex;gap:8px;"><button class="status-pill active" data-decide="${r.id}:a">Approve</button><button class="status-pill" data-decide="${r.id}:r">Reject</button></div>`

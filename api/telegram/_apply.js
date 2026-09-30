@@ -149,7 +149,23 @@ export async function startApply({ telegramUserId, tournamentId, reply }) {
 function playersPrompt(teamSize) {
   const { min, max } = playerLimits(teamSize);
   const count = min === max ? `${min}` : `${min} to ${max} (subs included)`;
-  return `Send your ${count} players, one per line — in-game name, then BGMI UID:\n\nMortal - 5123456789\nScout - 5234567890\n\nPlayers don't need a Nexus ID.`;
+  return `Send your ${count} players, one per line — in-game name, then BGMI UID:\n\nMortal - 5123456789\nScout - 5234567890\nViper\n\nThe UID is optional (like Viper above), but without it that player's results aren't saved to their history. Players don't need a Nexus ID.`;
+}
+
+// One line → { ign, uid } (uid null for a name-only player), or null if
+// unreadable. A bare number is rejected: it's a UID with no name.
+function parsePlayerLine(line) {
+  const m = line.match(PLAYER_LINE);
+  if (m) {
+    const ign = m[1].trim();
+    return ign.length <= 40 ? { ign, uid: m[2] } : null;
+  }
+  if (/^\d+$/.test(line) || line.length > 40) return null;
+  return { ign: line, uid: null };
+}
+
+function rosterText(players) {
+  return players.map((p, i) => `${i + 1}. ${p.ign} — ${p.uid ?? "no UID (no history)"}`).join("\n");
 }
 
 export async function continueApply({ telegramUserId, state, text, data, reply }) {
@@ -176,16 +192,18 @@ export async function continueApply({ telegramUserId, state, text, data, reply }
     const players = [];
     const bad = [];
     for (const line of lines) {
-      const m = line.match(PLAYER_LINE);
-      if (m && m[1].trim().length <= 40) players.push({ ign: m[1].trim(), uid: m[2] });
+      const player = parsePlayerLine(line);
+      if (player) players.push(player);
       else bad.push(line);
     }
     const { min, max } = playerLimits(t.team_size);
-    const uids = new Set(players.map((p) => p.uid));
+    const withUid = players.filter((p) => p.uid);
+    const names = new Set(players.map((p) => p.ign.toLowerCase()));
     let problem = null;
-    if (bad.length) problem = `I couldn't read: "${bad[0]}". Each line needs a name, then a UID (numbers only).`;
+    if (bad.length) problem = `I couldn't read: "${bad[0]}". Each line needs a name (up to 40 characters), optionally followed by a UID.`;
     else if (players.length < min || players.length > max) problem = `This tournament needs ${min === max ? min : `${min} to ${max}`} player${max === 1 ? "" : "s"} — you sent ${players.length}.`;
-    else if (uids.size !== players.length) problem = "The same UID appears twice.";
+    else if (new Set(withUid.map((p) => p.uid)).size !== withUid.length) problem = "The same UID appears twice.";
+    else if (names.size !== players.length) problem = "The same player name appears twice.";
     if (problem) {
       await reply(`${problem}\n\n${playersPrompt(t.team_size)}`, { buttons: [[CANCEL_BUTTON]] });
       return false;
@@ -193,8 +211,7 @@ export async function continueApply({ telegramUserId, state, text, data, reply }
 
     const teamName = t.team_size === 1 ? players[0].ign : state.teamName;
     await setSession(telegramUserId, { ...state, step: "confirm", teamName, players });
-    const roster = players.map((p, i) => `${i + 1}. ${p.ign} — ${p.uid}`).join("\n");
-    await reply(`Check your application for ${t.name}:\n\n${t.team_size === 1 ? "" : `Team: ${teamName}\n`}${roster}`, {
+    await reply(`Check your application for ${t.name}:\n\n${t.team_size === 1 ? "" : `Team: ${teamName}\n`}${rosterText(players)}`, {
       buttons: [[{ text: "✅ Submit", data: "ap_ok" }, { text: "✏️ Start over", data: `ap:${t.id}` }], [CANCEL_BUTTON]],
     });
     return false;
@@ -210,27 +227,32 @@ export async function continueApply({ telegramUserId, state, text, data, reply }
 }
 
 async function submitApplication({ telegramUserId, tournament, teamName, players, reply }) {
-  const uids = players.map((p) => p.uid);
-  const { data: taken } = await supabaseAdmin
-    .from("nexus_tournament_registration_members")
-    .select("player_ign, player_uid")
-    .eq("tournament_id", tournament.id)
-    .in("player_uid", uids)
-    .is("removed_at", null);
-  if (taken?.length) {
-    await reply(`${taken[0].player_ign} (UID ${taken[0].player_uid}) is already on another team in this tournament. Apply again without them.`, {
-      buttons: [[{ text: "Try again", data: `ap:${tournament.id}` }]],
-    });
-    return true;
-  }
+  // Only players with a UID can be checked or linked — name-only players
+  // can't be told apart from anyone else with the same name.
+  const uids = players.map((p) => p.uid).filter(Boolean);
+  let playerIdByUid = new Map();
+  if (uids.length) {
+    const { data: taken } = await supabaseAdmin
+      .from("nexus_tournament_registration_members")
+      .select("player_ign, player_uid")
+      .eq("tournament_id", tournament.id)
+      .in("player_uid", uids)
+      .is("removed_at", null);
+    if (taken?.length) {
+      await reply(`${taken[0].player_ign} (UID ${taken[0].player_uid}) is already on another team in this tournament. Apply again without them.`, {
+        buttons: [[{ text: "Try again", data: `ap:${tournament.id}` }]],
+      });
+      return true;
+    }
 
-  // Existing Nexus IDs for these UIDs, so their history links up straight away.
-  const { data: accounts } = await supabaseAdmin
-    .from("nexus_player_game_accounts")
-    .select("player_id, in_game_uid")
-    .eq("game", tournament.game)
-    .in("in_game_uid", uids);
-  const playerIdByUid = new Map((accounts || []).map((a) => [a.in_game_uid, a.player_id]));
+    // Existing Nexus IDs for these UIDs, so their history links up straight away.
+    const { data: accounts } = await supabaseAdmin
+      .from("nexus_player_game_accounts")
+      .select("player_id, in_game_uid")
+      .eq("game", tournament.game)
+      .in("in_game_uid", uids);
+    playerIdByUid = new Map((accounts || []).map((a) => [a.in_game_uid, a.player_id]));
+  }
 
   const { data: registration, error } = await supabaseAdmin
     .from("nexus_tournament_registrations")
@@ -268,10 +290,12 @@ async function submitApplication({ telegramUserId, tournament, teamName, players
   }
 
   await notifyToOfApplication({ tournament, teamName, playerCount: players.length });
-  const linked = players.filter((p) => playerIdByUid.has(p.uid)).length;
+  const linked = players.filter((p) => p.uid && playerIdByUid.has(p.uid)).length;
+  const nameOnly = players.filter((p) => !p.uid).length;
   await reply(
     `📨 Application sent to the organiser of ${tournament.name}. You'll get a message here when they approve it.` +
-      (linked ? `\n\n${linked} player${linked === 1 ? " has" : "s have"} a Nexus ID — this tournament will show on their profile.` : "")
+      (linked ? `\n\n${linked} player${linked === 1 ? " has" : "s have"} a Nexus ID — this tournament will show on their profile.` : "") +
+      (nameOnly ? `\n\n${nameOnly} player${nameOnly === 1 ? " has" : "s have"} no UID, so their results won't be saved to any history.` : "")
   );
   return true;
 }

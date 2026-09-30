@@ -104,7 +104,7 @@ export async function reviewNext({ member, tournamentId, reply }) {
     .eq("registration_id", reg.id)
     .order("id");
   const roster = (players || [])
-    .map((p, i) => `${i + 1}. ${p.player_ign} — ${p.player_uid}${p.player_id ? " · Nexus ID ✓" : ""}`)
+    .map((p, i) => `${i + 1}. ${p.player_ign} — ${p.player_uid ?? "no UID"}${p.player_id ? " · Nexus ID ✓" : ""}`)
     .join("\n");
   await reply(`📥 ${t.name}\nTeam: ${reg.team_name}\n\n${roster}`, {
     buttons: [

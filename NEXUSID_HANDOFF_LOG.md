@@ -322,6 +322,13 @@ Format: **Decision → Reasoning → Reversible?**
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — A registered player's UID is optional
+**Decision:** When applying, a captain may list a teammate by name only. The player counts toward the team; with no UID nothing can ever link their results to a Nexus ID, so no history is kept for them. UIDs are still stored whenever given.
+**Reasoning:** Moti, after live-testing step 2: captains often won't know every teammate's UID, and the bot is meant to lower the barrier to entry. The bot says plainly on the confirm screen and after submitting which players will have no history.
+**Reversible?** Yes — a per-tournament "require UIDs" switch could be added if TOs want it.
+**Supersedes:** Refines the 2026-09-30 bot-first decision's "guest entries keep each player's UID" (now: keep it when given).
+
+
 ### 2026-09-30 — Production domain is `nexus-id-omega.vercel.app`
 **Decision:** Treat `nexus-id-omega.vercel.app` as NexusID's public address everywhere (bot links, Supabase Site URL/redirects, Telegram webhook).
 **Reasoning:** Vercel → Domains (seen by Moti 2026-09-30) lists omega as the only Production domain. `nexus-id-mot-i-soft.vercel.app` is Vercel's team-scoped alias and sits behind Vercel's login — the 302-to-SSO found 2026-09-06 and Telegram's 401 on 2026-09-30 were both that login, not the site.
@@ -505,6 +512,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 ```
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
+
+### 2026-09-30 — Optional player UID on registrations
+**Type:** Schema / Behaviour change
+**What changed:** `0009_optional_player_uid.sql` drops NOT NULL on `nexus_tournament_registration_members.player_uid` (format check and the per-tournament UID unique index both ignore NULL). Bot accepts a bare name as a player line (a bare number is still rejected), checks for duplicate names within a team, and labels name-only players "no UID (no history)" on the confirm/review screens and the editor.
+**Why:** See Decision Log, same day.
+**Migration/backward-compat notes:** Planned migration numbers shift: guest participations → `0010`, payment status → `0011` (plan doc updated). Apply `0009` before this code deploys, or name-only submissions fail on the NOT NULL.
+
 
 ### 2026-09-30 — Tournament registrations (Phase 1, part 1)
 **Type:** Schema / New feature
@@ -750,7 +764,9 @@ Living list — not a full backlog, just the things a next session should know a
   7. **After that**, separately: go back to Meta Business Settings → Security Center → Start Verification, and submit that certificate as the business proof document — this is what actually lifts the 5-test-number cap. Not done in the same step as Udyam itself.
 - [ ] **Telegram bot go-live setup** (2026-09-30): ~~apply `0005`/`0006`/`0007`~~ — **done 2026-09-30** (Moti pasted all three in order; Phase 0.5 code pushed afterwards, `5686923`). Still to do: ~~create the bot via @BotFather~~ — **done 2026-09-30: @Motisoft_NexusID_bot**, username set in `js/auth.js` and `_router.js`. ~~Vercel env vars~~ — **done 2026-09-30** (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` added; `SUPABASE_SERVICE_ROLE_KEY` already existed from the Sep 5 Vercel↔Supabase integration, pointing at `jzqmscrmeywckzodgjre`). setWebhook first pointed at `mot-i-soft` → Telegram got 401 (Vercel login); re-pointed at `nexus-id-omega.vercel.app` (URL-encoded `url=` param — the plain form got "invalid webhook URL" once, likely a copy/paste artifact). **Bot answered `/start` with the welcome menu, 2026-09-30 — webhook, secret check, Supabase session read all working live.** **Become a TO live-tested by Moti 2026-09-30:** email code → TO created → set-password link opened `set-password.html` on omega (first attempt landed on the mot-i-soft home page until the live Supabase Site URL/Redirect URLs were switched to omega). Dashboard Members card showed Moti as owner, and email + password login worked. Remaining live tests: invites (bot + web) and website Connect Telegram. Exact steps in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` → "One-time bot setup". Then live-test linking from the dashboard.
 - [x] **Custom email sender (SMTP) connected in Supabase** — done 2026-09-30 by Moti: a dedicated Gmail account via app password (`smtp.gmail.com:587`), email rate limit raised to ~30/hour, `{{ .Token }}` added to the Confirm signup and Magic Link templates (link kept too). Live "Confirm email" setting confirmed **on**; `supabase/config.toml` `[auth.email] enable_confirmations` updated to `true` to match. Found because Supabase's built-in sender only emails the project's own team members, 2/hour. Gmail's own cap is ~500/day — revisit if signups outgrow that.
-- [ ] **Step 2 live test** (2026-09-30) — ~~apply `0008`, then push~~ **done: Moti applied `0008`, then `9c1b629` was pushed.** Still to do: live-test with two Telegram accounts: TO creates + opens a tournament, the other finds and applies, TO approves (bot and website).
+- [x] **Step 2 live test** — Moti: "all good" (2026-09-30).
+- [ ] **Apply `0009_optional_player_uid.sql`, then push** (2026-09-30) — name-only players; the code is committed locally.
+- [ ] ~~Step 2 live test~~ (2026-09-30, superseded by the line above) — ~~apply `0008`, then push~~ **done: Moti applied `0008`, then `9c1b629` was pushed.** Still to do: live-test with two Telegram accounts: TO creates + opens a tournament, the other finds and applies, TO approves (bot and website).
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->
 
