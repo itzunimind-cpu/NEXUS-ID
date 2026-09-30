@@ -309,6 +309,12 @@ Format: **Decision → Reasoning → Reversible?**
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Production domain is `nexus-id-omega.vercel.app`
+**Decision:** Treat `nexus-id-omega.vercel.app` as NexusID's public address everywhere (bot links, Supabase Site URL/redirects, Telegram webhook).
+**Reasoning:** Vercel → Domains (seen by Moti 2026-09-30) lists omega as the only Production domain. `nexus-id-mot-i-soft.vercel.app` is Vercel's team-scoped alias and sits behind Vercel's login — the 302-to-SSO found 2026-09-06 and Telegram's 401 on 2026-09-30 were both that login, not the site.
+**Reversible?** Yes — if a custom domain is added later, switch to it the same way.
+**Supersedes:** The 2026-09-06 note/Change Log correction that declared `mot-i-soft` the production domain and omega stale.
+
 ### 2026-09-30 — Bot-first direction: shared TO accounts, TO signup on Telegram, captains, guest UIDs, universal TO search
 **Decision:** The bot is the acquisition channel; a Nexus ID is optional history, never a prerequisite. Agreed with Moti (full detail: `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` decisions 6–12):
   - TO IDs are shared through **members with their own logins** (Owner/Admin, invite links), not a shared password. `private.current_to_id()` will resolve via a new `nexus_to_members` table.
@@ -486,6 +492,12 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 ```
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
+
+### 2026-09-30 — Site address switched back to `nexus-id-omega.vercel.app`
+**Type:** Infra / Config
+**What changed:** `api/telegram/_supabaseAdmin.js` `SITE_URL` fallback, `supabase/config.toml` `site_url` (+ omega added to `additional_redirect_urls`, mot-i-soft kept), and the setWebhook command in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` now use `nexus-id-omega.vercel.app`.
+**Why:** See Decision Log 2026-09-30 (production domain). Telegram's webhook got 401 at the mot-i-soft address.
+**Migration/backward-compat notes:** Live Supabase Site URL / Redirect URLs must be updated by hand in the dashboard (Moti, same day) — `config.toml` is never pushed. Reverses the 2026-09-06 Change Log correction that moved `site_url` from omega to mot-i-soft.
 
 ### 2026-09-30 — Website signup: confirm with the emailed code
 **Type:** New feature
