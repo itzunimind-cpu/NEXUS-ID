@@ -6,6 +6,19 @@
 -- path in this environment).
 
 -- =========================================================================
+-- 0. Remove the WhatsApp Phase 0 objects. The old 0005/0006 WhatsApp
+--    migrations were deleted from the repo on 2026-09-30, but Moti had
+--    already pasted them into the live project. `if exists` keeps this
+--    safe on a database that never had them. whatsapp_phone_e164 in
+--    particular must go: nexus_tos is publicly SELECTable, so that column
+--    exposed linked phone numbers to anyone.
+-- =========================================================================
+alter table public.nexus_tos drop column if exists whatsapp_phone_e164;
+drop table if exists public.nexus_wa_link_codes;
+drop function if exists public.generate_wa_link_code();
+drop table if exists public.nexus_wa_sessions;
+
+-- =========================================================================
 -- 1. nexus_to_telegram_links — binds one Telegram account to a TO.
 --    A separate table rather than a column on nexus_tos: nexus_tos is
 --    publicly SELECTable (0001 §13, `using (true)` for anon), so a column
