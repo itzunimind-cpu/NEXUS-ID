@@ -49,6 +49,27 @@ export async function setPassword(password) {
   if (error) throw error;
 }
 
+// Confirms a new signup with the code from the confirmation email (the
+// email's link does the same thing). "email" is Supabase's current type for
+// emailed codes; "signup" is the older type some projects still issue for
+// confirmation emails, so it's tried if the first one is rejected.
+export async function verifySignupCode(email, token) {
+  const first = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (!first.error) return first.data;
+  const second = await supabase.auth.verifyOtp({ email, token, type: "signup" });
+  if (second.error) throw first.error;
+  return second.data;
+}
+
+export async function resendSignupCode(email) {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/to-onboarding.html` },
+  });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;

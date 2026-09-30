@@ -103,8 +103,8 @@
 
         <div id="otp-code-section" style="display:flex;flex-direction:column;gap:12px;" hidden>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <label class="field-label">6-Digit Code</label>
-            <input type="text" id="otp-code" inputmode="numeric" maxlength="6" class="field-input" placeholder="000000">
+            <label class="field-label">Code</label>
+            <input type="text" id="otp-code" inputmode="numeric" maxlength="10" autocomplete="one-time-code" class="field-input" placeholder="Code from email">
           </div>
           <button type="submit" id="verify-otp-btn" class="btn btn-forest">Verify &amp; Log In</button>
         </div>
@@ -129,12 +129,24 @@
         <button type="submit" id="signup-btn" class="btn btn-primary">Create Account</button>
       </form>
 
+      <!-- SIGN UP: confirm with the emailed code -->
+      <form id="signup-code-form" style="display:flex;flex-direction:column;gap:18px;" hidden>
+        <p id="signup-code-info" class="msg-info"></p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label class="field-label" for="signup-code">Code</label>
+          <input type="text" id="signup-code" required inputmode="numeric" maxlength="10" autocomplete="one-time-code" class="field-input" placeholder="Code from email">
+        </div>
+        <p id="signup-code-error" class="msg-error" hidden></p>
+        <button type="submit" id="signup-code-btn" class="btn btn-forest">Confirm &amp; Continue</button>
+        <button type="button" id="resend-signup-code-btn" class="link-btn" style="margin:0 auto;">Resend code</button>
+      </form>
+
     </div>
   </main>
 </div>
 
 <script type="module">
-  import { signInTo, signInWithOtp, verifyOtp, signUpTo, getSession, postLoginDestination } from "/js/auth.js";
+  import { signInTo, signInWithOtp, verifyOtp, signUpTo, getSession, postLoginDestination, verifySignupCode, resendSignupCode } from "/js/auth.js";
 
   const tabLogin = document.getElementById("tab-login");
   const tabSignup = document.getElementById("tab-signup");
@@ -152,6 +164,7 @@
     pageTitle.textContent = isLogin ? "TO Access" : "Create TO Account";
     pageSubtitle.textContent = isLogin ? "Manage your tournament ledger" : "Register to run tournaments on NexusID";
     signupForm.hidden = isLogin;
+    document.getElementById("signup-code-form").hidden = true;
     if (isLogin) {
       // Default back to the password method whenever returning to the login tab.
       passwordForm.hidden = false;
@@ -250,12 +263,52 @@
       if (data.session) {
         window.location.href = await postLoginDestination();
       } else {
-        signupInfo.textContent = "Account created. Check your email to confirm it, then log in.";
-        signupInfo.hidden = false;
+        showSignupCodeStep(email);
       }
     } catch (err) {
       signupError.textContent = err.message || "Something went wrong. Please try again.";
       signupError.hidden = false;
+    }
+  });
+
+  // After signup with email confirmation on: enter the emailed code here
+  // instead of having to find and click the link.
+  const signupCodeForm = document.getElementById("signup-code-form");
+  const signupCodeError = document.getElementById("signup-code-error");
+  const signupCodeInfo = document.getElementById("signup-code-info");
+  let pendingSignupEmail = null;
+
+  function showSignupCodeStep(email) {
+    pendingSignupEmail = email;
+    signupForm.hidden = true;
+    signupCodeInfo.textContent = `We emailed a code to ${email}. Enter it below — or click the link in that email.`;
+    signupCodeForm.hidden = false;
+    document.getElementById("signup-code").focus();
+  }
+
+  signupCodeForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    signupCodeError.hidden = true;
+    const btn = document.getElementById("signup-code-btn");
+    btn.disabled = true;
+    try {
+      await verifySignupCode(pendingSignupEmail, document.getElementById("signup-code").value.trim());
+      window.location.href = await postLoginDestination();
+    } catch (err) {
+      signupCodeError.textContent = "That code is wrong or has expired. Check it, or resend.";
+      signupCodeError.hidden = false;
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("resend-signup-code-btn").addEventListener("click", async () => {
+    signupCodeError.hidden = true;
+    try {
+      await resendSignupCode(pendingSignupEmail);
+      signupCodeInfo.textContent = `New code sent to ${pendingSignupEmail}.`;
+    } catch (err) {
+      signupCodeError.textContent = err.message || "Couldn't resend — wait a minute and try again.";
+      signupCodeError.hidden = false;
     }
   });
 </script>

@@ -487,6 +487,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Website signup: confirm with the emailed code
+**Type:** New feature
+**What changed:** `to-login.html`'s SIGN UP tab now shows a code box right after "Create Account" (plus "Resend code"), instead of only "check your email, then log in". The OTP login code field no longer caps input at 6 digits (the code length is a project setting). `js/auth.js` gained `verifySignupCode` (tries type `email`, falls back to `signup`) and `resendSignupCode`.
+**Why:** After SMTP was set up the same day, confirmation emails carry both a code (`{{ .Token }}`) and a link. Moti tested signup and found the page gave no way to enter the code.
+**Migration/backward-compat notes:** The email's link still works as before. No schema change.
+
+
 ### 2026-09-30 — Phase 0.5: TO members, invites, TO signup on Telegram
 **Type:** Schema / New feature
 **What changed:** `0007_to_members.sql`: `nexus_to_members`, `nexus_to_invites`, `generate_to_invite_code()`, `accept_to_invite()`, `private.add_to_owner()` trigger, `private.current_to_role()`, `private.current_to_id()` rewritten to resolve via membership, `nexus_bot_link_codes.auth_user_id` added, `nexus_to_telegram_links` dropped (folded into members). Bot gained the account flow and menu (`_router.js`, `_account.js`, `_members.js`, `_session.js`). `js/auth.js`: `fetchMyToProfile` via membership; new `setPassword`, `fetchMyToMembers`, `removeToMember`, `createToInvite`, `acceptToInvite`, `postLoginDestination`, pending-invite helpers. New pages `join.html`, `set-password.html`.
