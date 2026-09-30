@@ -26,4 +26,4 @@ export function createAuthClient() {
   });
 }
 
-export const SITE_URL = process.env.SITE_URL || "https://nexus-id-mot-i-soft.vercel.app";
+export const SITE_URL = process.env.SITE_URL || "https://nexus-id-omega.vercel.app";

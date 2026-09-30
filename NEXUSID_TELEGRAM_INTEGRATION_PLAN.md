@@ -51,7 +51,7 @@ Vercel env vars needed (not yet set — see Open Threads): `SUPABASE_SERVICE_ROL
 2. In Vercel, set `TELEGRAM_BOT_TOKEN` to that token, `TELEGRAM_WEBHOOK_SECRET` to a long random string you make up (letters, digits, `_`, `-` only), and `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API). Redeploy.
 3. Tell Telegram where to deliver messages (run once, filling in the token and secret):
    ```
-   curl "https://api.telegram.org/bot<TOKEN>/setWebhook" -d "url=https://nexus-id-mot-i-soft.vercel.app/api/telegram/webhook" -d "secret_token=<SECRET>" -d 'allowed_updates=["message","callback_query"]'
+   curl "https://api.telegram.org/bot<TOKEN>/setWebhook" -d "url=https://nexus-id-omega.vercel.app/api/telegram/webhook" -d "secret_token=<SECRET>" -d 'allowed_updates=["message","callback_query"]'
    ```
    Vercel Deployment Protection (see Open Threads) would block Telegram from reaching the webhook too — it must be off for Production.
 
