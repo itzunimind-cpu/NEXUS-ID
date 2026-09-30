@@ -26,6 +26,19 @@ One entry per work session. Newest on top. This is the "what happened" ledger �
 
 <!-- TEMPLATE ABOVE — ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### Session — 2026-09-30 (cont. 2) — Bot live; step 2 built: Find a TO → apply → approve
+**Duration/scope:** Took Moti through custom SMTP, bot creation (@Motisoft_NexusID_bot), Vercel env vars and setWebhook; found the real production domain is `nexus-id-omega.vercel.app`. Live-tested Become a TO → set password → dashboard login. Then built step 2 (plan Phase 1, part 1).
+**Files touched:** `supabase/migrations/0008_tournament_registrations.sql` (new), `api/telegram/_apply.js`, `_tournaments.js`, `_registrations.js` (new), `api/registrations/decide.js` (new), `api/telegram/_router.js`, `js/auth.js`, `tournament-editor.html`, `tournament-new.html`, `to-login.html` (signup code box, earlier), plan doc.
+**What was done:**
+- Everything in the plan doc's "Built (Phase 1, part 1)". Simulated the whole flow against an in-memory fake of supabase-js (scratch only): create → open → find → apply (bad lines, wrong count, duplicate UID, duplicate team name all rejected) → TO push → approve → second decision blocked → web reject via the API (non-member refused) → UIDs freed → close hides the tournament.
+**What was NOT finished / left mid-flight:**
+- `0008` not applied; code committed but **not pushed** — pushing first would break `tournament-new.html`/`tournament-editor.html` (they read/write `team_size`/`registrations_open`) and the bot.
+- Not built from Phase 1: guest results logging (`0009` participations relaxation), team captains (decision 8), per-member action attribution, `registration_code`. Standings/scores for applicants (step 3).
+**Anything the next session needs to know before continuing:**
+- Deploy order: Moti pastes `0008`, then push.
+- Step 3 = results + standings: `0009` (guest participations keyed by UID), log results for registered teams in the editor/bot, "My registrations" → placement + kills (decision 11: no points).
+
+
 ### Session — 2026-09-30 (cont.) — Phase 0.5 built: TO accounts on Telegram, shared members, invites
 **Duration/scope:** Pushed the Telegram conversion, then built Phase 0.5 per decisions 6–7 in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md`. Moti also asked how Supabase verification works and what TO registration data is collected, from whom.
 **Files touched:** `supabase/migrations/0007_to_members.sql` (new), `api/telegram/_router.js`, `_account.js`, `_members.js`, `_session.js` (new), `api/telegram/webhook.js`, `_link.js`, `_send.js`, `_supabaseAdmin.js`, `js/auth.js`, `to-dashboard.html`, `to-login.html`, `to-onboarding.html`, `join.html` (new), `set-password.html` (new), `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md`.
@@ -493,6 +506,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Tournament registrations (Phase 1, part 1)
+**Type:** Schema / New feature
+**What changed:** `0008_tournament_registrations.sql` (`nexus_tournaments.registrations_open`/`team_size`, `nexus_tournament_registrations`, `nexus_tournament_registration_members`, `private.attach_guest_registrations()` trigger). Bot apply/review flows, `api/registrations/decide.js`, editor Registrations section, team size on tournament creation. `js/auth.js`: `createTournament` takes `team_size`; new `setRegistrationsOpen`, `fetchTournamentRegistrations`, `decideRegistration`.
+**Why:** Decisions 9, 10, 12 (bot-first, 2026-09-30).
+**Migration/backward-compat notes:** Existing tournaments get `team_size = 4`, `registrations_open = false`. Must be applied before the code deploys. No existing policy altered; `grant update (registrations_open, team_size)` is additive.
+
+
 ### 2026-09-30 — Site address switched back to `nexus-id-omega.vercel.app`
 **Type:** Infra / Config
 **What changed:** `api/telegram/_supabaseAdmin.js` `SITE_URL` fallback, `supabase/config.toml` `site_url` (+ omega added to `additional_redirect_urls`, mot-i-soft kept), and the setWebhook command in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` now use `nexus-id-omega.vercel.app`.
@@ -668,6 +688,9 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 | `join.html` | Page | Project root | Accept a TO invite on the web | New, 2026-09-30 — not live-tested |
 | `set-password.html` | Page | Project root | Set website password from the bot's one-time link | New, 2026-09-30 — not live-tested |
 | `nexus_to_telegram_links` | DB table | — | ~~One Telegram per TO~~ | **Deprecated 2026-09-30 → folded into `nexus_to_members.telegram_user_id`** (dropped by `0007`) |
+| `nexus_tournament_registrations` | DB table | Supabase | Tournament applications (named team, status pending/approved/rejected, applicant's Telegram id) | New, 2026-09-30 (`0008`) — not yet applied |
+| `nexus_tournament_registration_members` | DB table | Supabase | Players on each application: IGN + BGMI UID always, `player_id` if they have a Nexus ID | New, 2026-09-30 (`0008`) — not yet applied |
+| `api/registrations/decide.js` | Vercel function | Project root | Website approve/reject endpoint (Bearer Supabase token), sends the applicant's Telegram message | New, 2026-09-30 — not deployed |
 
 <!-- ADD NEW ROWS AS FUNCTIONS/TABLES/COMPONENTS ARE ACTUALLY BUILT -->
 
@@ -727,6 +750,7 @@ Living list — not a full backlog, just the things a next session should know a
   7. **After that**, separately: go back to Meta Business Settings → Security Center → Start Verification, and submit that certificate as the business proof document — this is what actually lifts the 5-test-number cap. Not done in the same step as Udyam itself.
 - [ ] **Telegram bot go-live setup** (2026-09-30): ~~apply `0005`/`0006`/`0007`~~ — **done 2026-09-30** (Moti pasted all three in order; Phase 0.5 code pushed afterwards, `5686923`). Still to do: ~~create the bot via @BotFather~~ — **done 2026-09-30: @Motisoft_NexusID_bot**, username set in `js/auth.js` and `_router.js`. ~~Vercel env vars~~ — **done 2026-09-30** (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` added; `SUPABASE_SERVICE_ROLE_KEY` already existed from the Sep 5 Vercel↔Supabase integration, pointing at `jzqmscrmeywckzodgjre`). setWebhook first pointed at `mot-i-soft` → Telegram got 401 (Vercel login); re-pointed at `nexus-id-omega.vercel.app` (URL-encoded `url=` param — the plain form got "invalid webhook URL" once, likely a copy/paste artifact). **Bot answered `/start` with the welcome menu, 2026-09-30 — webhook, secret check, Supabase session read all working live.** **Become a TO live-tested by Moti 2026-09-30:** email code → TO created → set-password link opened `set-password.html` on omega (first attempt landed on the mot-i-soft home page until the live Supabase Site URL/Redirect URLs were switched to omega). Dashboard Members card showed Moti as owner, and email + password login worked. Remaining live tests: invites (bot + web) and website Connect Telegram. Exact steps in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` → "One-time bot setup". Then live-test linking from the dashboard.
 - [x] **Custom email sender (SMTP) connected in Supabase** — done 2026-09-30 by Moti: a dedicated Gmail account via app password (`smtp.gmail.com:587`), email rate limit raised to ~30/hour, `{{ .Token }}` added to the Confirm signup and Magic Link templates (link kept too). Live "Confirm email" setting confirmed **on**; `supabase/config.toml` `[auth.email] enable_confirmations` updated to `true` to match. Found because Supabase's built-in sender only emails the project's own team members, 2/hour. Gmail's own cap is ~500/day — revisit if signups outgrow that.
+- [ ] **Apply `0008_tournament_registrations.sql`, then push** (2026-09-30) — step 2 code is committed locally but must not deploy before the migration. Then live-test with two Telegram accounts: TO creates + opens a tournament, the other finds and applies, TO approves (bot and website).
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->
 

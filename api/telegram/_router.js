@@ -3,9 +3,24 @@ import { getSession, clearSession } from "./_session.js";
 import { findMemberByTelegram } from "./_members.js";
 import { LINK_CODE_PATTERN, redeemLinkCode } from "./_link.js";
 import { startAccountFlow, continueAccountFlow, sendPasswordLink } from "./_account.js";
+import { startFind, handleFindQuery, showOrganiser, showTournament, startApply, continueApply, showMyRegistrations } from "./_apply.js";
+import {
+  listMyTournaments,
+  showMyTournament,
+  setRegistrationsOpen,
+  reviewNext,
+  decideFromBot,
+  startNewTournament,
+  continueNewTournament,
+} from "./_tournaments.js";
 
 const INVITE_START_PATTERN = /^\s*\/start\s+inv_([0-9a-f]{12})\s*$/i;
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || "Motisoft_NexusID_bot";
+
+// Buttons that navigate somewhere new. Tapping one abandons whatever flow was
+// in progress (e.g. an old message's button pressed mid-signup). Everything
+// else a button sends (ns:4, skip, ap_ok, resend...) belongs to the flow.
+const NAVIGATION = /^(find|myreg|mt|nt|members|invite|web_login|become_to|have_to|(to|t|ap|mt|rv):\d+|rg:\d+:[01]|dc:\d+:[ar])$/;
 
 // Entry point for every private-chat message or button tap. `text` is set
 // for typed messages, `data` for button taps (callback_data).
@@ -27,6 +42,7 @@ export async function handleUpdate({ telegramUserId, text, data, reply }) {
     }
     return startAccountFlow({ telegramUserId, intent: "invite", inviteCode: inviteMatch[1], reply });
   }
+
   // A tapped "/start <code>" link always counts; a bare typed code only when
   // no flow is in progress — a 10-digit BGMI UID typed mid-signup would
   // otherwise look like a link code.
@@ -40,23 +56,57 @@ export async function handleUpdate({ telegramUserId, text, data, reply }) {
     return;
   }
 
-  if (state.flow === "account") {
-    const done = await continueAccountFlow({ telegramUserId, state, text, data, reply });
+  if (data && NAVIGATION.test(data)) {
+    if (state.flow) await clearSession(telegramUserId);
+    return navigate({ telegramUserId, data, reply });
+  }
+
+  if (state.flow) {
+    const member = state.flow === "new_tournament" ? await findMemberByTelegram(telegramUserId) : null;
+    let done = true;
+    if (state.flow === "account") done = await continueAccountFlow({ telegramUserId, state, text, data, reply });
+    else if (state.flow === "find") {
+      await handleFindQuery({ telegramUserId, text, reply });
+      return;
+    } else if (state.flow === "apply") done = await continueApply({ telegramUserId, state, text, data, reply });
+    else if (state.flow === "new_tournament" && member) {
+      done = await continueNewTournament({ telegramUserId, member, state, text, data, reply });
+    } else await clearSession(telegramUserId);
     if (done) return showMenu({ telegramUserId, reply });
     return;
   }
 
-  const member = await findMemberByTelegram(telegramUserId);
+  return showMenu({ telegramUserId, reply });
+}
 
+async function navigate({ telegramUserId, data, reply }) {
+  const [action, arg, extra] = data.split(":");
+  const id = arg ? Number(arg) : null;
+
+  // Open to everyone.
+  if (action === "find") return startFind({ telegramUserId, reply });
+  if (action === "to") return showOrganiser({ toDbId: id, reply });
+  if (action === "t") return showTournament({ tournamentId: id, reply });
+  if (action === "ap") return startApply({ telegramUserId, tournamentId: id, reply });
+  if (action === "myreg") return showMyRegistrations({ telegramUserId, reply });
+
+  const member = await findMemberByTelegram(telegramUserId);
   if (!member) {
-    if (data === "become_to") return startAccountFlow({ telegramUserId, intent: "signup", reply });
-    if (data === "have_to") return startAccountFlow({ telegramUserId, intent: "login", reply });
+    if (action === "become_to") return startAccountFlow({ telegramUserId, intent: "signup", reply });
+    if (action === "have_to") return startAccountFlow({ telegramUserId, intent: "login", reply });
     return showMenu({ telegramUserId, reply, member });
   }
 
-  if (data === "members") return listMembers({ member, reply });
-  if (data === "invite" && member.role === "owner") return createInvite({ member, reply });
-  if (data === "web_login") {
+  // TO members only.
+  if (action === "mt" && id) return showMyTournament({ member, tournamentId: id, reply });
+  if (action === "mt") return listMyTournaments({ member, reply });
+  if (action === "nt") return startNewTournament({ telegramUserId, reply });
+  if (action === "rg") return setRegistrationsOpen({ member, tournamentId: id, open: extra === "1", reply });
+  if (action === "rv") return reviewNext({ member, tournamentId: id, reply });
+  if (action === "dc") return decideFromBot({ member, registrationId: id, approve: extra === "a", reply });
+  if (action === "members") return listMembers({ member, reply });
+  if (action === "invite" && member.role === "owner") return createInvite({ member, reply });
+  if (action === "web_login") {
     return sendPasswordLink(member.auth_user_id, reply, "Your website login is your email address.");
   }
   return showMenu({ telegramUserId, reply, member });
@@ -64,11 +114,17 @@ export async function handleUpdate({ telegramUserId, text, data, reply }) {
 
 async function showMenu({ telegramUserId, reply, member }) {
   const current = member === undefined ? await findMemberByTelegram(telegramUserId) : member;
+  const playerRows = [
+    [{ text: "🔍 Find a TO", data: "find" }],
+    [{ text: "📋 My registrations", data: "myreg" }],
+  ];
+
   if (!current) {
     await reply(
-      "Welcome to NexusID — run BGMI tournaments from Telegram.\n\nAre you a tournament organiser (TO)?",
+      "Welcome to NexusID — BGMI tournaments on Telegram.\n\nFind an organiser to join their tournaments, or run your own as a TO.",
       {
         buttons: [
+          ...playerRows,
           [{ text: "🏆 Become a TO", data: "become_to" }],
           [{ text: "🔑 I already have a TO account", data: "have_to" }],
         ],
@@ -77,13 +133,12 @@ async function showMenu({ telegramUserId, reply, member }) {
     return;
   }
 
-  const rows = [[{ text: "👥 Members", data: "members" }]];
+  const rows = [[{ text: "🏆 My tournaments", data: "mt" }], [{ text: "👥 Members", data: "members" }]];
   if (current.role === "owner") rows.push([{ text: "➕ Invite a member", data: "invite" }]);
-  rows.push([{ text: "🌐 Website login", data: "web_login" }]);
-  await reply(
-    `${current.nexus_tos.organisation_name} (${current.nexus_tos.to_id})\nYou: ${current.display_name} · ${current.role}\n\nTournament features are coming next.`,
-    { buttons: rows }
-  );
+  rows.push([{ text: "🌐 Website login", data: "web_login" }], ...playerRows);
+  await reply(`${current.nexus_tos.organisation_name} (${current.nexus_tos.to_id})\nYou: ${current.display_name} · ${current.role}`, {
+    buttons: rows,
+  });
 }
 
 async function listMembers({ member, reply }) {

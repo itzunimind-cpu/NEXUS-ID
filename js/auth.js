@@ -162,7 +162,7 @@ export async function createTeam({ team_name }) {
 
 // Creates a new tournament (nexus_tournaments row). Matches/results/roster
 // are separate follow-up work — this only creates the tournament shell.
-export async function createTournament({ name, game, format, stage, prize_pool, start_date, end_date, max_players }) {
+export async function createTournament({ name, game, format, stage, prize_pool, start_date, end_date, max_players, team_size }) {
   const profile = await fetchMyToProfile();
   if (!profile) throw new Error("Complete TO registration first.");
 
@@ -177,6 +177,7 @@ export async function createTournament({ name, game, format, stage, prize_pool, 
       start_date: start_date || null,
       end_date: end_date || null,
       max_players: max_players || null,
+      team_size: team_size || 4,
       created_by_to_id: profile.id,
     })
     .select("id, name, game")
@@ -243,6 +244,54 @@ export async function updateTournamentStatus({ tournament_id, status }) {
     .update({ status })
     .eq("id", tournament_id);
   if (error) throw error;
+}
+
+// Opens or closes a tournament to applications from the Telegram bot's
+// "Find a TO". Logs registrations_opened/closed like the bot does.
+export async function setRegistrationsOpen({ tournament_id, open }) {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+  const { data, error } = await supabase
+    .from("nexus_tournaments")
+    .update({ registrations_open: open })
+    .eq("id", tournament_id)
+    .select("name")
+    .single();
+  if (error) throw error;
+  await supabase.from("nexus_activity_log").insert({
+    to_id: profile.id,
+    tournament_id,
+    event_type: open ? "registrations_opened" : "registrations_closed",
+    detail: data.name,
+  });
+}
+
+// A tournament's applications with their players, newest first. RLS limits
+// this to the owning TO's members.
+export async function fetchTournamentRegistrations(tournament_id) {
+  const { data, error } = await supabase
+    .from("nexus_tournament_registrations")
+    .select("id, team_name, status, registered_via, created_at, nexus_tournament_registration_members (player_ign, player_uid, player_id, removed_at)")
+    .eq("tournament_id", tournament_id)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+// Approve / reject goes through a server endpoint (not a client UPDATE) so
+// the applicant also gets their Telegram message — see
+// api/registrations/decide.js.
+export async function decideRegistration({ registrationId, approve }) {
+  const session = await getSession();
+  if (!session) throw new Error("Log in again.");
+  const res = await fetch("/api/registrations/decide", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ registrationId, approve }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || "Couldn't save that decision.");
+  return body.message;
 }
 
 // Logs one participation row per squad member for a single match — one

@@ -65,6 +65,7 @@
   import {
     requireSession, fetchMyToProfile, createMatch, updateTournamentStatus,
     createTeam, addTeamMember, createPlayer, logParticipations, updateParticipations,
+    setRegistrationsOpen, fetchTournamentRegistrations, decideRegistration,
   } from "/js/auth.js";
 
   const content = document.getElementById("content");
@@ -79,6 +80,12 @@
 
   function wrap(inner) { content.innerHTML = `<div style="width:100%;max-width:640px;">${inner}</div>`; }
 
+  // Team names and IGNs arrive from strangers on Telegram — always escape
+  // them before they go into innerHTML.
+  function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
   function withinEditWindow(createdAt) {
     return Date.now() - new Date(createdAt).getTime() <= EDIT_WINDOW_MS;
   }
@@ -86,7 +93,7 @@
   async function loadAll() {
     const { data: t } = await supabase
       .from("nexus_tournaments")
-      .select("id, name, game, stage, status, created_by_to_id")
+      .select("id, name, game, stage, status, created_by_to_id, registrations_open, team_size")
       .eq("id", tournamentId)
       .maybeSingle();
     tournament = t;
@@ -466,6 +473,15 @@
         </div>
 
         <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <p style="font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--olive);margin:0;">Registrations</p>
+            <button class="status-pill" id="registrations-toggle"></button>
+          </div>
+          <p style="font-size:12px;color:var(--text-dim);margin:0;">When open, teams can find this tournament in the NexusID Telegram bot and apply. You approve or reject each one here or in the bot.</p>
+          <div id="registrations-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
           <p style="font-family:var(--font-mono);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--olive);margin:0;">New Match</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="number" class="field" id="new-match-number" placeholder="Match #" style="max-width:100px;" value="${matches.length + 1}">
@@ -506,7 +522,66 @@
       } catch (err) { alert(err.message || "Could not create match."); }
     });
 
+    document.getElementById("registrations-toggle").addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await setRegistrationsOpen({ tournament_id: tournament.id, open: !tournament.registrations_open });
+        tournament.registrations_open = !tournament.registrations_open;
+        renderRegistrations();
+      } catch (err) { alert(err.message || "Could not change registrations."); }
+      btn.disabled = false;
+    });
+
+    document.getElementById("registrations-list").addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-decide]");
+      if (!btn) return;
+      const [id, verdict] = btn.getAttribute("data-decide").split(":");
+      btn.disabled = true;
+      try {
+        await decideRegistration({ registrationId: Number(id), approve: verdict === "a" });
+        await renderRegistrations();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+      }
+    });
+
+    renderRegistrations();
     renderMatches();
+  }
+
+  async function renderRegistrations() {
+    const toggle = document.getElementById("registrations-toggle");
+    toggle.textContent = tournament.registrations_open ? "Open · click to close" : "Closed · click to open";
+    toggle.classList.toggle("active", tournament.registrations_open);
+
+    const list = document.getElementById("registrations-list");
+    let regs;
+    try {
+      regs = await fetchTournamentRegistrations(tournament.id);
+    } catch (err) {
+      list.innerHTML = `<p style="font-size:12px;color:var(--red);margin:0;">Couldn't load registrations.</p>`;
+      return;
+    }
+    if (!regs.length) {
+      list.innerHTML = `<p style="font-size:12px;color:var(--text-dim);margin:0;">No applications yet.</p>`;
+      return;
+    }
+    const order = { pending: 0, approved: 1, rejected: 2 };
+    regs.sort((a, b) => order[a.status] - order[b.status]);
+    list.innerHTML = regs.map((r) => {
+      const players = r.nexus_tournament_registration_members
+        .map((p) => `${esc(p.player_ign)} <span style="color:var(--text-dim);">${esc(p.player_uid)}${p.player_id ? " · Nexus ID" : ""}</span>`)
+        .join("<br>");
+      const actions = r.status === "pending"
+        ? `<div style="display:flex;gap:8px;"><button class="status-pill active" data-decide="${r.id}:a">Approve</button><button class="status-pill" data-decide="${r.id}:r">Reject</button></div>`
+        : `<span class="status-pill${r.status === "approved" ? " active" : ""}" style="cursor:default;">${r.status}</span>`;
+      return `<div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-md, 3px);background:var(--bg-card);display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+        <div style="font-size:13px;line-height:1.6;"><strong>${esc(r.team_name)}</strong><br>${players}</div>
+        ${actions}
+      </div>`;
+    }).join("");
   }
 
   async function render() {

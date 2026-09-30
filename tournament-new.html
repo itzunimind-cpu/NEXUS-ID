@@ -51,6 +51,17 @@
       </div>
 
       <div class="space-y-2">
+        <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Team Size <span class="text-[#B3261E]">*</span></label>
+        <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
+          <select id="t_team_size" required class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14] appearance-none">
+            <option value="4" selected>Squad (4)</option>
+            <option value="2">Duo (2)</option>
+            <option value="1">Solo (1)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="space-y-2">
         <label class="font-mono text-[10px] font-bold uppercase tracking-wider text-[#2C4A2E]">Stage</label>
         <div class="relative flex items-center rounded-xl bg-[#E8E1D5] border border-[#C9BFA8]/60 input-focus-ring transition-all duration-200">
           <input type="text" id="t_stage" class="w-full bg-transparent py-4 px-4 text-sm text-[#1C1A14]" placeholder="e.g. Qualifiers, Grand Finals">
@@ -139,6 +150,7 @@
         end_date: document.getElementById("t_end").value,
         max_players: document.getElementById("t_max_players").value ? Number(document.getElementById("t_max_players").value) : null,
         prize_pool: document.getElementById("t_prize_pool").value ? Number(document.getElementById("t_prize_pool").value) : null,
+        team_size: Number(document.getElementById("t_team_size").value),
       });
       document.getElementById("success-subtitle").textContent = `"${created.name}" is now in draft status.`;
       document.getElementById("success-editor-link").href = `/tournament-editor.html?id=${created.id}`;
