@@ -293,6 +293,19 @@ Format: **Decision → Reasoning → Reversible?**
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Bot-first direction: shared TO accounts, TO signup on Telegram, captains, guest UIDs, universal TO search
+**Decision:** The bot is the acquisition channel; a Nexus ID is optional history, never a prerequisite. Agreed with Moti (full detail: `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` decisions 6–12):
+  - TO IDs are shared through **members with their own logins** (Owner/Admin, invite links), not a shared password. `private.current_to_id()` will resolve via a new `nexus_to_members` table.
+  - A TO account can be **created fully on Telegram** (email collected); the bot sends a one-time "set your password" link to a web page so the TO picks their own password and can log in on the web. Passwords are never typed into the chat.
+  - Teams are run from Telegram by a **captain** (creator), co-managers by invite. Linking to an existing `TM-` id now needs that invite (changes 2026-09-27 point 5 for teams).
+  - Players need no phone or Telegram — identity stays the BGMI UID, typed by the captain.
+  - **Guest entries keep each player's UID** so results attach if they later get a Nexus ID (Moti chose this over names-only; changes 2026-09-27 point 4).
+  - **Standings stay raw placement + kills** (Moti chose this over adding a points table; reaffirms 2026-09-05).
+  - Universal **Find a TO → active/upcoming tournaments → Apply** is open to anyone on the bot.
+**Reasoning:** Shared passwords can't be revoked per person or show who did what. Collecting UIDs from guests turns "play first" into a path to claiming a Nexus ID later. Keeping standings raw avoids building a points ruleset another app owns.
+**Reversible?** Yes — each is additive schema; the points table could be added later.
+**Supersedes:** 2026-09-27 points 4 (guest UIDs now kept) and 5 (team linking now invite-only). Refines 2026-09-05 "Supabase Auth is TO-only" (still TO-only, now also creatable from the bot).
+
 ### 2026-09-30 — Bot channel: Telegram instead of WhatsApp
 **Decision:** The NexusID bot runs on the Telegram Bot API, not the Meta WhatsApp Cloud API. Replaces point 1 of the 2026-09-27 decision (below); points 2–5 stand, with channel details swapped (TO linking via a Telegram account instead of a phone number; player/team links keyed by Telegram user id).
 **Reasoning:** WhatsApp without Meta Business Verification is capped at 5 manually-added test numbers, and verification needed Udyam Registration first — so the self-service registration flow (decision 5) couldn't reach real players at all. Telegram needs no business verification, any user can message a bot immediately, it's free with no 24h window or paid templates (so proactive TO pushes and payment reminders become free too), and it has richer buttons. Telegram is widely used in the BGMI community. It also avoids storing phone numbers entirely (Section 5 guardrail). Tradeoff accepted: fewer users already have Telegram installed than WhatsApp.
