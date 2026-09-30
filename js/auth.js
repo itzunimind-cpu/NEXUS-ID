@@ -284,9 +284,10 @@ export async function updateParticipations({ updates }) {
   }
 }
 
-// The bot's @username, without the "@". Placeholder until the bot is created
-// via @BotFather — update this to the real username before going live.
-export const TELEGRAM_BOT_USERNAME = "NexusIDBot";
+// The bot's @username, without the "@" (created via @BotFather 2026-09-30).
+// Must match TELEGRAM_BOT_USERNAME in Vercel — the static site can't read
+// Vercel env vars, so it's duplicated here.
+export const TELEGRAM_BOT_USERNAME = "Motisoft_NexusID_bot";
 
 // Generates a short-lived (15 min) Telegram linking code for the current
 // member and returns it with a one-tap t.me deep link. Opening that link

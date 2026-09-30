@@ -44,7 +44,7 @@ Built: `package.json`, `api/telegram/webhook.js` (checks Telegram's `X-Telegram-
 
 Still to add per phase: `api/telegram/_{ids,register,roster,payments,stats}.js`, team captains (decision 8).
 
-Vercel env vars needed (not yet set — see Open Threads): `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` (without the @). Also update `TELEGRAM_BOT_USERNAME` in `js/auth.js` (currently the placeholder `NexusIDBot`) — the static site can't read Vercel env vars.
+Vercel env vars needed (not yet set — see Open Threads): `SUPABASE_SERVICE_ROLE_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` (without the @). The bot is **@Motisoft_NexusID_bot** (created 2026-09-30); that username is also hardcoded in `js/auth.js` and as the fallback in `api/telegram/_router.js`, since the static site can't read Vercel env vars.
 
 **One-time bot setup** (Moti, ~5 minutes, no business paperwork):
 1. In Telegram, message `@BotFather` → `/newbot` → pick a display name and a username ending in `bot`. BotFather replies with the bot token (a password for the bot — keep it private).

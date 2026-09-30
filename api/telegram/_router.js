@@ -5,7 +5,7 @@ import { LINK_CODE_PATTERN, redeemLinkCode } from "./_link.js";
 import { startAccountFlow, continueAccountFlow, sendPasswordLink } from "./_account.js";
 
 const INVITE_START_PATTERN = /^\s*\/start\s+inv_([0-9a-f]{12})\s*$/i;
-const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || "NexusIDBot";
+const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || "Motisoft_NexusID_bot";
 
 // Entry point for every private-chat message or button tap. `text` is set
 // for typed messages, `data` for button taps (callback_data).
