@@ -247,35 +247,41 @@ export async function updateParticipations({ updates }) {
   }
 }
 
-// Generates a short-lived (15 min) WhatsApp linking code for the current TO.
-// The TO sends this code from their phone to the bot to bind
-// nexus_tos.whatsapp_phone_e164 — the code is only ever consumed server-side
-// by the WhatsApp webhook (service role), never by a client UPDATE (see
-// 0005_whatsapp_phone_linking.sql).
-export async function generateWaLinkCode() {
+// The bot's @username, without the "@". Placeholder until the bot is created
+// via @BotFather — update this to the real username before going live.
+export const TELEGRAM_BOT_USERNAME = "NexusIDBot";
+
+// Generates a short-lived (15 min) Telegram linking code for the current TO
+// and returns it with a one-tap t.me deep link. Opening that link sends
+// "/start <code>" to the bot, which binds the TO's Telegram account in
+// nexus_to_telegram_links — the code is only ever consumed server-side by
+// the Telegram webhook (service role), never by a client UPDATE (see
+// 0005_telegram_to_linking.sql).
+export async function generateTelegramLinkCode() {
   const profile = await fetchMyToProfile();
   if (!profile) throw new Error("Complete TO registration first.");
 
   const { data, error } = await supabase
-    .from("nexus_wa_link_codes")
+    .from("nexus_bot_link_codes")
     .insert({ to_id: profile.id })
     .select("code, expires_at")
     .single();
   if (error) throw error;
-  return data;
+  return { ...data, deepLink: `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${data.code}` };
 }
 
-// Returns the current TO's linked WhatsApp number, or null if not linked yet.
-export async function fetchMyWaLinkStatus() {
-  const session = await getSession();
-  if (!session) return null;
+// Returns when the current TO linked their Telegram account, or null if not
+// linked yet. RLS limits this table to the TO's own row.
+export async function fetchMyTelegramLink() {
+  const profile = await fetchMyToProfile();
+  if (!profile) return null;
   const { data, error } = await supabase
-    .from("nexus_tos")
-    .select("whatsapp_phone_e164")
-    .eq("auth_user_id", session.user.id)
+    .from("nexus_to_telegram_links")
+    .select("linked_at")
+    .eq("to_id", profile.id)
     .maybeSingle();
   if (error) throw error;
-  return data?.whatsapp_phone_e164 || null;
+  return data;
 }
 
 // Redirect guard for pages that require a logged-in TO. Returns the session

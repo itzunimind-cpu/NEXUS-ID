@@ -8,10 +8,10 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 }
 
 // Service-role client — bypasses RLS entirely. Every authorization check for
-// a WhatsApp-originated write (phone linked? owns this tournament? still
-// inside the 48h edit window?) must happen in the flow code that uses this
-// client, not in the database. Never import this module from anything that
-// ships to the browser.
+// a bot-originated write (Telegram account linked? owns this tournament?
+// still inside the 48h edit window?) must happen in the flow code that uses
+// this client, not in the database. Never import this module from anything
+// that ships to the browser.
 export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });

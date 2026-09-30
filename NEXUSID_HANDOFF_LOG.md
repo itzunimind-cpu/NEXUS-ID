@@ -26,6 +26,24 @@ One entry per work session. Newest on top. This is the "what happened" ledger �
 
 <!-- TEMPLATE ABOVE — ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### Session — 2026-09-30 — Bot channel switched from WhatsApp to Telegram; Phase 0 rebuilt
+**Duration/scope:** Moti asked whether the bot could use Telegram instead of WhatsApp. Compared the two (main driver: WhatsApp's 5-test-number cap without Meta Business Verification, which needed Udyam Registration first), Moti approved the switch, and Phase 0 was rebuilt for Telegram. Rationale in Section 2 (2026-09-30).
+**Files touched:** `api/whatsapp/` (deleted), `api/telegram/webhook.js`, `_send.js`, `_supabaseAdmin.js`, `_link.js` (new), `supabase/migrations/0005_whatsapp_phone_linking.sql` + `0006_wa_sessions.sql` (deleted — never applied), `supabase/migrations/0005_telegram_to_linking.sql` + `0006_bot_sessions.sql` (new), `js/auth.js`, `to-dashboard.html`, `NEXUSID_WHATSAPP_INTEGRATION_PLAN.md` → renamed `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` and rewritten.
+**What was done:**
+- `0005_telegram_to_linking.sql`: TO↔Telegram link lives in its own table `nexus_to_telegram_links` (owner-only SELECT, zero client writes), **not** a column on `nexus_tos` — `nexus_tos` is publicly SELECTable to `anon`, so the old `whatsapp_phone_e164` column design would have published every linked TO's phone number (also a Section 5 guardrail miss: "phone numbers stored unhashed"). `nexus_bot_link_codes` replaces `nexus_wa_link_codes`: 10 hex-char codes instead of 6 digits (anyone can message a Telegram bot, so a 6-digit code was brute-forceable inside its 15-min window), and clients can insert only `to_id` (column-level insert grant) so a TO can't pick their own code or expiry.
+- `0006_bot_sessions.sql`: `nexus_bot_sessions` keyed by `(channel, external_user_id)` so a WhatsApp channel could be added later without a second table.
+- `api/telegram/webhook.js`: verifies Telegram's `X-Telegram-Bot-Api-Secret-Token` header (timing-safe), ignores everything but private-chat text messages, acks 200 only after processing. `_link.js` accepts a bare code or the deep-link form `/start <code>`, consumes the code with a conditional update (can't be redeemed twice), then upserts the link (a TO re-linking from a new Telegram account replaces the old link). Flow takes a `reply` callback instead of importing the Telegram send function directly.
+- `to-dashboard.html`: "Connect Telegram" card — shows an "Open Telegram" one-tap deep link (`t.me/<bot>?start=<code>`) plus the code for manual entry; once linked, a "Telegram Connected · Linked on <date>" card.
+- Plan doc: all channel-specific details swapped (Phase 1's `nexus_wa_entity_links` → `nexus_bot_entity_links` keyed by `telegram_user_id`; `registered_via` values `web`/`telegram`; proactive pushes/reminders now free). One small Phase 1 correction: the "captain can read their own pending request via RLS" policy was dropped — captains have no web login, so they check status through the bot (service role).
+**What was NOT finished / left mid-flight:**
+- Migrations `0005`/`0006` not applied (manual Dashboard SQL Editor paste, as always).
+- Bot not yet created via @BotFather; `TELEGRAM_BOT_TOKEN`/`TELEGRAM_WEBHOOK_SECRET`/`SUPABASE_SERVICE_ROLE_KEY` not set in Vercel; `setWebhook` not run; `TELEGRAM_BOT_USERNAME` in `js/auth.js` is the placeholder `NexusIDBot`. Steps are in the plan doc's "One-time bot setup".
+- Nothing live-tested (can't be until the above is done).
+**Anything the next session needs to know before continuing:**
+- The Udyam Registration item in Section 6 is **no longer a blocker** for the bot — only relevant if WhatsApp is ever added back.
+- Vercel Deployment Protection (Section 6) would also block Telegram's webhook calls — must be off for Production before the bot can work.
+
+
 ### Session — 2026-09-27 — WhatsApp integration: full plan agreed, Phase 0 (infra + TO phone linking) built
 **Duration/scope:** Moti asked for a WhatsApp-based path into NexusID — teams/TOs registering, editing rosters, tracking payment status, and checking standings by messaging a bot, including tournament entry for teams/players with no existing Nexus ID at all. Worked through the tradeoffs (official Meta Cloud API vs. unofficial libraries vs. paid BSPs; whether "payment tracking" could mean real money movement; how a WhatsApp message proves it's acting as a given TO; what "no history tracked" for guest entries actually means for the results/standings ledger) before writing anything, then built the first phase end-to-end. Full rationale for every decision below lives in Section 2; this entry is the "what got built" record.
 **Files touched:** `package.json` (new — first in this repo), `supabase/migrations/0005_whatsapp_phone_linking.sql` (new), `supabase/migrations/0006_wa_sessions.sql` (new), `api/whatsapp/webhook.js` (new), `api/whatsapp/_supabaseAdmin.js` (new), `api/whatsapp/_send.js` (new), `api/whatsapp/flows/link.js` (new), `js/auth.js`, `to-dashboard.html`.
@@ -274,6 +292,13 @@ Format: **Decision → Reasoning → Reversible?**
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Bot channel: Telegram instead of WhatsApp
+**Decision:** The NexusID bot runs on the Telegram Bot API, not the Meta WhatsApp Cloud API. Replaces point 1 of the 2026-09-27 decision (below); points 2–5 stand, with channel details swapped (TO linking via a Telegram account instead of a phone number; player/team links keyed by Telegram user id).
+**Reasoning:** WhatsApp without Meta Business Verification is capped at 5 manually-added test numbers, and verification needed Udyam Registration first — so the self-service registration flow (decision 5) couldn't reach real players at all. Telegram needs no business verification, any user can message a bot immediately, it's free with no 24h window or paid templates (so proactive TO pushes and payment reminders become free too), and it has richer buttons. Telegram is widely used in the BGMI community. It also avoids storing phone numbers entirely (Section 5 guardrail). Tradeoff accepted: fewer users already have Telegram installed than WhatsApp.
+**Reversible?** Yes — flow code takes a `reply` callback and `nexus_bot_sessions`/`nexus_bot_link_codes` are channel-neutral, so WhatsApp can be added later as a second channel (after Udyam + Meta verification) without redoing the flows.
+**Supersedes:** Point 1 of "2026-09-27 — WhatsApp integration: five scope decisions before building anything".
+
+
 ### 2026-09-27 — WhatsApp integration: five scope decisions before building anything
 **Decision:** Before designing the WhatsApp feature, five forks were resolved with Moti:
   1. **WhatsApp channel: official Meta WhatsApp Cloud API**, not an unofficial library (Baileys/whatsapp-web.js) or a paid BSP (Wati/AiSensy/Gupshup). The core flow (replying to a user-initiated message inside the 24h session window) is free either way; only a platform-initiated message outside that window (a payment reminder, a push notification to a TO) would need a paid template message.
@@ -432,6 +457,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Bot Phase 0 moved from WhatsApp to Telegram
+**Type:** Schema / New feature / Infra
+**What changed:** `api/whatsapp/` replaced by `api/telegram/` (`webhook.js`, `_send.js`, `_supabaseAdmin.js`, `_link.js`). Never-applied `0005_whatsapp_phone_linking.sql`/`0006_wa_sessions.sql` deleted and replaced by `0005_telegram_to_linking.sql` (`nexus_to_telegram_links`, `nexus_bot_link_codes`, `generate_bot_link_code()`) and `0006_bot_sessions.sql` (`nexus_bot_sessions`). `js/auth.js`: `generateWaLinkCode`/`fetchMyWaLinkStatus` → `generateTelegramLinkCode`/`fetchMyTelegramLink`, plus `TELEGRAM_BOT_USERNAME`. `to-dashboard.html`: "Connect WhatsApp" card → "Connect Telegram" with a deep link.
+**Why:** See Decision Log 2026-09-30.
+**Migration/backward-compat notes:** Safe to replace `0005`/`0006` in place — neither was ever applied to the live project, so nothing references `whatsapp_phone_e164`/`nexus_wa_*`. New `0005`/`0006` still **not applied**. No table/column/policy from `0001`–`0004` altered.
+
+
 ### 2026-09-27 — WhatsApp integration Phase 0: backend layer introduced, TO phone linking
 **Type:** New feature / Infra
 **What changed:** This repo's first backend code — `package.json` (first ever, adds `@supabase/supabase-js` for the Node runtime) and `/api/whatsapp/` (`webhook.js`, `_supabaseAdmin.js`, `_send.js`, `flows/link.js`), deployed as Vercel serverless functions alongside the existing static pages (no `vercel.json` needed — zero-config detection). `nexus_tos.whatsapp_phone_e164` and `nexus_wa_link_codes` added (`0005_whatsapp_phone_linking.sql`); `nexus_wa_sessions` added (`0006_wa_sessions.sql`, schema-ready but not yet driving any logic). `js/auth.js` gained `generateWaLinkCode`/`fetchMyWaLinkStatus`; `to-dashboard.html` gained a "Connect WhatsApp" quick-action card.
@@ -567,6 +599,12 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 | `team-roster.html` | Page | Project root | TO-only: link an existing player into an existing team's roster (any TO can add, per the 2026-09-05 cross-TO decision), remove a member (soft-remove via `left_at`, team creator only), or create a new player inline | Built 2026-09-16 (cont. 3); its `0004_team_roster_removal.sql` dependency is applied — not live-tested |
 | `tournament-new.html` | Page | Project root | TO-only: create a tournament shell (name/game/format/stage/prize_pool/dates/max players), then hands off into `tournament-editor.html` | Built 2026-09-06; `stage`/`prize_pool` fields and editor hand-off link added 2026-09-16; not live-tested |
 | `tournament-editor.html` | Page | Project root | TO-only, owner-checked: create matches, log squad results in batch (one placement + per-member kills → one `nexus_participations` row per player) or solo results, edit results within the 48h window, and move the tournament through draft/active/concluded status | Built 2026-09-16 (cont. 3), not live-tested |
+| `nexus_to_telegram_links` | DB table | Supabase | One Telegram account per TO (`to_id` PK, `telegram_user_id` unique). Owner-only SELECT, written only by the Telegram webhook | New, 2026-09-30 (`0005_telegram_to_linking.sql`) — not yet applied |
+| `nexus_bot_link_codes` | DB table | Supabase | Short-lived (15 min) 10-hex-char codes a TO generates on the dashboard to link their Telegram account. Replaces the never-applied `nexus_wa_link_codes` | New, 2026-09-30 (`0005_telegram_to_linking.sql`) — not yet applied |
+| `generate_bot_link_code()` | DB function | Supabase | Default for `nexus_bot_link_codes.code`. Replaces the never-applied `generate_wa_link_code()` | New, 2026-09-30 — not yet applied |
+| `nexus_bot_sessions` | DB table | Supabase | Bot conversation state keyed by `(channel, external_user_id)`, service-role only. Replaces the never-applied `nexus_wa_sessions` | New, 2026-09-30 (`0006_bot_sessions.sql`) — not yet applied, not yet used by any flow |
+| `api/telegram/` | Vercel functions | Project root | Telegram bot backend: `webhook.js` (the only public endpoint, `/api/telegram/webhook`), `_send.js`, `_supabaseAdmin.js`, `_link.js` (TO linking flow) | New, 2026-09-30, replaces `api/whatsapp/` (deleted) — not deployed/tested; bot not yet created |
+| `api/whatsapp/`, `nexus_wa_link_codes`, `nexus_wa_sessions`, `nexus_tos.whatsapp_phone_e164`, `generateWaLinkCode`, `fetchMyWaLinkStatus` | — | — | ~~WhatsApp bot Phase 0~~ | **Deprecated 2026-09-30 → renamed to the Telegram equivalents above** (`generateTelegramLinkCode`, `fetchMyTelegramLink` in `js/auth.js`). Never applied/deployed |
 
 <!-- ADD NEW ROWS AS FUNCTIONS/TABLES/COMPONENTS ARE ACTUALLY BUILT -->
 
@@ -615,7 +653,7 @@ Living list — not a full backlog, just the things a next session should know a
 - [ ] **Check Vercel Deployment Protection** on the `nexus-id` project (Settings → Deployment Protection) — `curl` against the production domain (`https://nexus-id-mot-i-soft.vercel.app/`) returns a 302 to `vercel.com/sso-api`/login for every path tried (`/`, `/index.html`, `/to-login.html`), meaning anonymous real users likely cannot reach the site at all right now. Found 2026-09-06 (cont. 3), unconfirmed/unresolved — needs Moti to check the dashboard and decide whether Production should have protection off or preview-only.
 - [ ] Reconcile `supabase/config.toml`'s `[auth]` section against the live project's actual dashboard settings before ever running `supabase config push` — known-stale fields found so far: `site_url`/`additional_redirect_urls` (fixed 2026-09-06 to `nexus-id-mot-i-soft.vercel.app`) and `enable_confirmations` (fixed to `true`). Rate limits and everything else in that section are unverified against live values.
 - [ ] Post-pilot pitch target: GodLike Esports' "GodLike Warriors" program (fan-appointed City Foreman/Campus Managers who run local grassroots tournaments and scout talent — strong ICP fit for TO-side adoption). Approach after one pilot tournament is fully logged, using it as proof artifact rather than a cold concept pitch. Unconfirmed whether Free Fire-specific Warriors exist vs. general/multi-title — verify before reaching out.
-- [ ] **Moti needs to complete Udyam Registration** (found 2026-09-27, blocks the WhatsApp integration's player-self-service registration flow — see that day's Session Log entry). Moti has no registered business, and Meta's WhatsApp Cloud API restricts an unverified app to messaging only 5 manually-added test numbers — real players/TOs outside that list can't reach the bot at all. Udyam is India's free, ~10-15 minute online MSME/sole-proprietorship registration; no company or GST needed. Steps, for whenever Moti picks this back up:
+- [ ] **(No longer blocking as of 2026-09-30 — bot moved to Telegram, which needs no business verification. Only relevant if WhatsApp is ever added back as a second channel.)** Moti needs to complete Udyam Registration (found 2026-09-27, blocked the WhatsApp integration's player-self-service registration flow — see that day's Session Log entry). Moti has no registered business, and Meta's WhatsApp Cloud API restricts an unverified app to messaging only 5 manually-added test numbers — real players/TOs outside that list can't reach the bot at all. Udyam is India's free, ~10-15 minute online MSME/sole-proprietorship registration; no company or GST needed. Steps, for whenever Moti picks this back up:
   1. Have Aadhaar number (+ its linked mobile, for OTP) and PAN number ready.
   2. Go to `udyamregistration.gov.in` directly (not a search result — look-alike sites charge a fake fee; the real one is free) → "For New Entrepreneurs who are not Registered yet as MSME."
   3. Enter Aadhaar number + name as on Aadhaar → verify via OTP sent to the linked phone.
@@ -623,6 +661,7 @@ Living list — not a full backlog, just the things a next session should know a
   5. Fill the business details form: enterprise name (anything, e.g. "Metazone"), type = **Proprietorship**, address (home address is fine), bank account + IFSC, NIC code (search by keyword like "software"/"information technology" and pick the closest match), investment/turnover (small numbers → auto-classifies as "Micro," the most lenient tier).
   6. Submit, verify with one more OTP → get a Udyam Registration Number and downloadable Udyam Certificate (PDF with QR code) immediately.
   7. **After that**, separately: go back to Meta Business Settings → Security Center → Start Verification, and submit that certificate as the business proof document — this is what actually lifts the 5-test-number cap. Not done in the same step as Udyam itself.
+- [ ] **Telegram bot go-live setup** (2026-09-30): apply `0005_telegram_to_linking.sql` + `0006_bot_sessions.sql` via the Dashboard SQL Editor; create the bot via @BotFather; set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` in Vercel; run `setWebhook`; replace the `TELEGRAM_BOT_USERNAME` placeholder in `js/auth.js`. Exact steps in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` → "One-time bot setup". Then live-test linking from the dashboard.
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->
 
