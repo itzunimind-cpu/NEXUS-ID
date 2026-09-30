@@ -42,24 +42,40 @@ export async function verifyOtp(email, token) {
   return data;
 }
 
+// Sets a new password for the logged-in user — used by set-password.html
+// after arriving through the one-time link the Telegram bot sends.
+export async function setPassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
-// Returns the caller's own nexus_tos row, or null if they haven't completed
-// registration yet. Relies on the public SELECT policy — filtering by
-// auth_user_id here is a query convenience, not the security boundary.
+// Returns the TO the caller is an active member of (as owner or admin), or
+// null if they haven't created or joined one yet. Same shape as before
+// members existed (id = nexus_tos.id, etc.), plus member_id/role/display_name,
+// so existing callers keep working. See 0007_to_members.sql.
 export async function fetchMyToProfile() {
   const session = await getSession();
   if (!session) return null;
   const { data, error } = await supabase
-    .from("nexus_tos")
-    .select("id, to_id, to_ign, to_uid, to_real_name, organisation_name, created_at")
+    .from("nexus_to_members")
+    .select("id, role, display_name, telegram_user_id, telegram_linked_at, nexus_tos (id, to_id, to_ign, to_uid, to_real_name, organisation_name, created_at)")
     .eq("auth_user_id", session.user.id)
+    .is("removed_at", null)
     .maybeSingle();
   if (error) throw error;
-  return data;
+  if (!data) return null;
+  return {
+    ...data.nexus_tos,
+    member_id: data.id,
+    role: data.role,
+    display_name: data.display_name,
+    telegram_linked_at: data.telegram_user_id ? data.telegram_linked_at : null,
+  };
 }
 
 // Creates the nexus_tos row for the currently authenticated user — this is
@@ -251,12 +267,12 @@ export async function updateParticipations({ updates }) {
 // via @BotFather — update this to the real username before going live.
 export const TELEGRAM_BOT_USERNAME = "NexusIDBot";
 
-// Generates a short-lived (15 min) Telegram linking code for the current TO
-// and returns it with a one-tap t.me deep link. Opening that link sends
-// "/start <code>" to the bot, which binds the TO's Telegram account in
-// nexus_to_telegram_links — the code is only ever consumed server-side by
-// the Telegram webhook (service role), never by a client UPDATE (see
-// 0005_telegram_to_linking.sql).
+// Generates a short-lived (15 min) Telegram linking code for the current
+// member and returns it with a one-tap t.me deep link. Opening that link
+// sends "/start <code>" to the bot, which links this member's Telegram
+// account — the code is only ever consumed server-side by the Telegram
+// webhook (service role), never by a client UPDATE (see
+// 0005_telegram_to_linking.sql / 0007_to_members.sql).
 export async function generateTelegramLinkCode() {
   const profile = await fetchMyToProfile();
   if (!profile) throw new Error("Complete TO registration first.");
@@ -270,18 +286,83 @@ export async function generateTelegramLinkCode() {
   return { ...data, deepLink: `https://t.me/${TELEGRAM_BOT_USERNAME}?start=${data.code}` };
 }
 
-// Returns when the current TO linked their Telegram account, or null if not
-// linked yet. RLS limits this table to the TO's own row.
+// Returns { linked_at } if the current member has linked Telegram, else null.
 export async function fetchMyTelegramLink() {
   const profile = await fetchMyToProfile();
-  if (!profile) return null;
+  return profile?.telegram_linked_at ? { linked_at: profile.telegram_linked_at } : null;
+}
+
+// Active members of the caller's TO, owner first.
+export async function fetchMyToMembers() {
+  const profile = await fetchMyToProfile();
+  if (!profile) return [];
   const { data, error } = await supabase
-    .from("nexus_to_telegram_links")
-    .select("linked_at")
+    .from("nexus_to_members")
+    .select("id, role, display_name, telegram_user_id, joined_at")
     .eq("to_id", profile.id)
-    .maybeSingle();
+    .is("removed_at", null)
+    .order("joined_at");
   if (error) throw error;
   return data;
+}
+
+// Owner only (enforced by RLS). Soft-remove via removed_at — the removed
+// person loses access immediately, and their login can later join another TO.
+export async function removeToMember(memberId) {
+  const { error } = await supabase
+    .from("nexus_to_members")
+    .update({ removed_at: new Date().toISOString() })
+    .eq("id", memberId);
+  if (error) throw error;
+}
+
+// Owner only (enforced by RLS). Returns both invite links for one code.
+export async function createToInvite() {
+  const profile = await fetchMyToProfile();
+  if (!profile) throw new Error("Complete TO registration first.");
+  const { data, error } = await supabase
+    .from("nexus_to_invites")
+    .insert({ to_id: profile.id })
+    .select("code, expires_at")
+    .single();
+  if (error) throw error;
+  return {
+    ...data,
+    telegramLink: `https://t.me/${TELEGRAM_BOT_USERNAME}?start=inv_${data.code}`,
+    webLink: `${window.location.origin}/join.html?code=${data.code}`,
+  };
+}
+
+// Joins the TO behind an invite code as the logged-in user. Returns its TO- id.
+export async function acceptToInvite(code, name) {
+  const { data, error } = await supabase.rpc("accept_to_invite", { invite_code: code, member_name: name });
+  if (error) throw error;
+  return data;
+}
+
+// An invite code picked up by join.html before the visitor had a login.
+// Kept across the login/signup/email-confirmation round trip so they land
+// back on join.html instead of TO onboarding.
+const PENDING_INVITE_KEY = "nexusid_pending_invite";
+
+export function setPendingInvite(code) {
+  try { localStorage.setItem(PENDING_INVITE_KEY, code); } catch {}
+}
+
+export function getPendingInvite() {
+  try { return localStorage.getItem(PENDING_INVITE_KEY); } catch { return null; }
+}
+
+export function clearPendingInvite() {
+  try { localStorage.removeItem(PENDING_INVITE_KEY); } catch {}
+}
+
+// Where a freshly logged-in user should go next.
+export async function postLoginDestination() {
+  const profile = await fetchMyToProfile();
+  if (profile) return "/to-dashboard.html";
+  const invite = getPendingInvite();
+  return invite ? `/join.html?code=${encodeURIComponent(invite)}` : "/to-onboarding.html";
 }
 
 // Redirect guard for pages that require a logged-in TO. Returns the session

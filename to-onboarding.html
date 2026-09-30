@@ -127,7 +127,7 @@
 </div>
 
 <script type="module">
-  import { requireSession, fetchMyToProfile, createToProfile } from "/js/auth.js";
+  import { requireSession, fetchMyToProfile, createToProfile, getPendingInvite } from "/js/auth.js";
 
   (async () => {
     const session = await requireSession();
@@ -135,7 +135,12 @@
     const existing = await fetchMyToProfile();
     if (existing) {
       window.location.href = "/to-dashboard.html";
+      return;
     }
+    // Arrived via an invite link (email confirmation lands here) — join that
+    // TO instead of creating a new one.
+    const invite = getPendingInvite();
+    if (invite) window.location.href = `/join.html?code=${encodeURIComponent(invite)}`;
   })();
 
   const form = document.getElementById("onboarding-form");

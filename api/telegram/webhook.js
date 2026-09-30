@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
-import { handleIncomingMessage } from "./_link.js";
-import { sendText } from "./_send.js";
+import { handleUpdate } from "./_router.js";
+import { sendText, answerCallback } from "./_send.js";
 
 // Telegram sends the secret_token given to setWebhook back in this header on
 // every update. Anything without it didn't come from Telegram.
@@ -24,20 +24,29 @@ export default async function handler(req, res) {
     return;
   }
 
-  const message = req.body?.message;
-  // Private chats only — a bot added to a group would otherwise treat every
-  // group member's message as a linking attempt.
-  if (message?.chat?.type === "private" && typeof message.text === "string" && message.from) {
-    const chatId = message.chat.id;
-    try {
-      await handleIncomingMessage({
+  const { message, callback_query: callback } = req.body || {};
+
+  try {
+    // Private chats only — a bot added to a group would otherwise treat every
+    // group member's message as input to their own flow.
+    if (message?.chat?.type === "private" && typeof message.text === "string" && message.from) {
+      const chatId = message.chat.id;
+      await handleUpdate({
         telegramUserId: message.from.id,
         text: message.text,
-        reply: (text) => sendText(chatId, text),
+        reply: (text, opts) => sendText(chatId, text, opts),
       });
-    } catch (err) {
-      console.error("Telegram flow error:", err);
+    } else if (callback?.message?.chat?.type === "private" && callback.from) {
+      const chatId = callback.message.chat.id;
+      await answerCallback(callback.id);
+      await handleUpdate({
+        telegramUserId: callback.from.id,
+        data: callback.data,
+        reply: (text, opts) => sendText(chatId, text, opts),
+      });
     }
+  } catch (err) {
+    console.error("Telegram flow error:", err);
   }
 
   // Ack once processing is done, not before — Telegram redelivers an update

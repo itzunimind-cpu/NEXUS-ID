@@ -60,12 +60,26 @@
         <p id="tg-code-value" class="font-display text-2xl font-bold tracking-widest"></p>
         <p id="tg-code-expiry" class="text-[11px] font-normal text-white/70"></p>
       </div>
+
+      <div id="members-card" class="p-5 rounded-2xl bg-[#E8E1D5] border border-[#C9BFA8]/60 space-y-3">
+        <p class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#4E7C2F]">Members</p>
+        <p class="text-[11px] text-[#6B6048]">Everyone here has their own login and can run this TO's tournaments. Only the owner can invite or remove people.</p>
+        <ul id="members-list" class="space-y-2"></ul>
+        <button id="invite-btn" class="hidden font-mono w-full py-3 bg-[#2C4A2E] text-white rounded-xl font-bold uppercase tracking-[0.1em] text-xs btn-active">Invite a Member</button>
+        <div id="invite-panel" class="hidden space-y-2 text-[11px] text-[#1C1A14]">
+          <p class="text-[#6B6048]">Send one of these links. It works once, for 7 days, and makes them an admin.</p>
+          <p class="font-mono font-bold uppercase tracking-widest text-[10px] text-[#4E7C2F]">Telegram</p>
+          <p id="invite-telegram" class="break-all"></p>
+          <p class="font-mono font-bold uppercase tracking-widest text-[10px] text-[#4E7C2F]">Website</p>
+          <p id="invite-web" class="break-all"></p>
+        </div>
+      </div>
     </div>
   </main>
 </div>
 
 <script type="module">
-  import { requireSession, fetchMyToProfile, signOut, generateTelegramLinkCode, fetchMyTelegramLink } from "/js/auth.js";
+  import { requireSession, fetchMyToProfile, signOut, generateTelegramLinkCode, fetchMyTelegramLink, fetchMyToMembers, removeToMember, createToInvite } from "/js/auth.js";
 
   (async () => {
     const session = await requireSession();
@@ -87,7 +101,51 @@
       document.getElementById("tg-linked-card").classList.remove("hidden");
       document.getElementById("tg-connect-btn").classList.add("hidden");
     }
+
+    await renderMembers(profile);
   })();
+
+  async function renderMembers(profile) {
+    const isOwner = profile.role === "owner";
+    document.getElementById("invite-btn").classList.toggle("hidden", !isOwner);
+    const list = document.getElementById("members-list");
+    list.replaceChildren();
+    for (const m of await fetchMyToMembers()) {
+      const li = document.createElement("li");
+      li.className = "flex items-center justify-between gap-3 text-sm";
+      const label = document.createElement("span");
+      label.textContent = `${m.display_name}${m.id === profile.member_id ? " (you)" : ""} · ${m.role}${m.telegram_user_id ? " · Telegram" : ""}`;
+      li.append(label);
+      if (isOwner && m.role !== "owner") {
+        const btn = document.createElement("button");
+        btn.className = "font-mono text-[10px] font-bold uppercase tracking-widest text-[#9B1C11]";
+        btn.textContent = "Remove";
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          try {
+            await removeToMember(m.id);
+            await renderMembers(profile);
+          } catch (err) {
+            btn.disabled = false;
+            btn.textContent = "Failed — retry";
+          }
+        });
+        li.append(btn);
+      }
+      list.append(li);
+    }
+  }
+
+  document.getElementById("invite-btn").addEventListener("click", async () => {
+    try {
+      const { telegramLink, webLink } = await createToInvite();
+      document.getElementById("invite-telegram").textContent = telegramLink;
+      document.getElementById("invite-web").textContent = webLink;
+      document.getElementById("invite-panel").classList.remove("hidden");
+    } catch (err) {
+      alert(err.message || "Couldn't create an invite — try again.");
+    }
+  });
 
   document.getElementById("sign-out-btn").addEventListener("click", async () => {
     await signOut();

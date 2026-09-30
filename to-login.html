@@ -134,7 +134,7 @@
 </div>
 
 <script type="module">
-  import { signInTo, signInWithOtp, verifyOtp, signUpTo, getSession, fetchMyToProfile } from "/js/auth.js";
+  import { signInTo, signInWithOtp, verifyOtp, signUpTo, getSession, postLoginDestination } from "/js/auth.js";
 
   const tabLogin = document.getElementById("tab-login");
   const tabSignup = document.getElementById("tab-signup");
@@ -168,13 +168,11 @@
   // Already logged in? Route straight to the right place.
   getSession().then(async (session) => {
     if (!session) return;
-    const profile = await fetchMyToProfile();
-    window.location.href = profile ? "/to-dashboard.html" : "/to-onboarding.html";
+    window.location.href = await postLoginDestination();
   });
 
   async function afterLogin() {
-    const profile = await fetchMyToProfile();
-    window.location.href = profile ? "/to-dashboard.html" : "/to-onboarding.html";
+    window.location.href = await postLoginDestination();
   }
 
   document.getElementById("show-otp-btn").addEventListener("click", () => {
@@ -250,7 +248,7 @@
     try {
       const data = await signUpTo(email, password);
       if (data.session) {
-        window.location.href = "/to-onboarding.html";
+        window.location.href = await postLoginDestination();
       } else {
         signupInfo.textContent = "Account created. Check your email to confirm it, then log in.";
         signupInfo.hidden = false;

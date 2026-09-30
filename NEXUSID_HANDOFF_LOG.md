@@ -26,6 +26,22 @@ One entry per work session. Newest on top. This is the "what happened" ledger �
 
 <!-- TEMPLATE ABOVE — ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### Session — 2026-09-30 (cont.) — Phase 0.5 built: TO accounts on Telegram, shared members, invites
+**Duration/scope:** Pushed the Telegram conversion, then built Phase 0.5 per decisions 6–7 in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md`. Moti also asked how Supabase verification works and what TO registration data is collected, from whom.
+**Files touched:** `supabase/migrations/0007_to_members.sql` (new), `api/telegram/_router.js`, `_account.js`, `_members.js`, `_session.js` (new), `api/telegram/webhook.js`, `_link.js`, `_send.js`, `_supabaseAdmin.js`, `js/auth.js`, `to-dashboard.html`, `to-login.html`, `to-onboarding.html`, `join.html` (new), `set-password.html` (new), `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md`.
+**What was done:**
+- Bot: menu with buttons; "Become a TO" (email → emailed code → org name, IGN, UID, optional real name → TO ID + one-time "set website password" link); "I already have a TO account" (email code → reconnects this Telegram, or finishes TO registration for a web login that never onboarded); owner "Invite a member" (Telegram + web links); invite acceptance on the bot (email code → name → admin); Members list; "Website login" (fresh set-password link).
+- Web: Members card on the dashboard (owner invites/removes), `join.html`, `set-password.html`; login/onboarding route invited users to `join.html`.
+- Simulated every bot flow against an in-memory fake of supabase-js (scratch only, not committed). Caught one real bug: a 10-digit BGMI UID typed during signup matched the Telegram link-code pattern and hijacked the flow — fixed (bare codes only count when no flow is in progress).
+**What was NOT finished / left mid-flight:**
+- Migrations 0005–0007 not applied. Bot not created. Nothing live-tested. Not pushed — must not deploy before 0007 is applied (see below).
+- Team captains (decision 8) moved into Phase 1. Per-member action attribution (decision 6) not built.
+**Anything the next session needs to know before continuing:**
+- **Deploy order matters:** after this commit, `fetchMyToProfile()` reads `nexus_to_members`. If the site deploys before `0007` is pasted, every TO page breaks. Paste 0005 → 0006 → 0007 first, then push.
+- **Email delivery is a blocker for real TO signups on the bot *and* the website** — see the new Open Threads item. Found this session: Supabase's default sender only emails the project's own team members, 2/hour.
+- Logging in with an existing TO email from a different Telegram account moves the Telegram link to the new account (proving the email is the authority). Intentional — covers a new phone.
+
+
 ### Session — 2026-09-30 — Bot channel switched from WhatsApp to Telegram; Phase 0 rebuilt
 **Duration/scope:** Moti asked whether the bot could use Telegram instead of WhatsApp. Compared the two (main driver: WhatsApp's 5-test-number cap without Meta Business Verification, which needed Udyam Registration first), Moti approved the switch, and Phase 0 was rebuilt for Telegram. Rationale in Section 2 (2026-09-30).
 **Files touched:** `api/whatsapp/` (deleted), `api/telegram/webhook.js`, `_send.js`, `_supabaseAdmin.js`, `_link.js` (new), `supabase/migrations/0005_whatsapp_phone_linking.sql` + `0006_wa_sessions.sql` (deleted from the repo — but see correction below: they *had* been applied live), `supabase/migrations/0005_telegram_to_linking.sql` + `0006_bot_sessions.sql` (new), `js/auth.js`, `to-dashboard.html`, `NEXUSID_WHATSAPP_INTEGRATION_PLAN.md` → renamed `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` and rewritten.
@@ -471,6 +487,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Phase 0.5: TO members, invites, TO signup on Telegram
+**Type:** Schema / New feature
+**What changed:** `0007_to_members.sql`: `nexus_to_members`, `nexus_to_invites`, `generate_to_invite_code()`, `accept_to_invite()`, `private.add_to_owner()` trigger, `private.current_to_role()`, `private.current_to_id()` rewritten to resolve via membership, `nexus_bot_link_codes.auth_user_id` added, `nexus_to_telegram_links` dropped (folded into members). Bot gained the account flow and menu (`_router.js`, `_account.js`, `_members.js`, `_session.js`). `js/auth.js`: `fetchMyToProfile` via membership; new `setPassword`, `fetchMyToMembers`, `removeToMember`, `createToInvite`, `acceptToInvite`, `postLoginDestination`, pending-invite helpers. New pages `join.html`, `set-password.html`.
+**Why:** Decisions 6–7 (Decision Log 2026-09-30, bot-first direction).
+**Migration/backward-compat notes:** 0007 requires 0005 + 0006. Backfills an owner membership for every existing TO, so existing TOs keep full access. Every 0001–0004 RLS policy is unchanged — they call `current_to_id()`, whose signature is unchanged. Must be applied **before** this code deploys.
+
+
 ### 2026-09-30 — Bot Phase 0 moved from WhatsApp to Telegram
 **Type:** Schema / New feature / Infra
 **What changed:** `api/whatsapp/` replaced by `api/telegram/` (`webhook.js`, `_send.js`, `_supabaseAdmin.js`, `_link.js`). Never-applied `0005_whatsapp_phone_linking.sql`/`0006_wa_sessions.sql` deleted and replaced by `0005_telegram_to_linking.sql` (`nexus_to_telegram_links`, `nexus_bot_link_codes`, `generate_bot_link_code()`) and `0006_bot_sessions.sql` (`nexus_bot_sessions`). `js/auth.js`: `generateWaLinkCode`/`fetchMyWaLinkStatus` → `generateTelegramLinkCode`/`fetchMyTelegramLink`, plus `TELEGRAM_BOT_USERNAME`. `to-dashboard.html`: "Connect WhatsApp" card → "Connect Telegram" with a deep link.
@@ -619,6 +642,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 | `nexus_bot_sessions` | DB table | Supabase | Bot conversation state keyed by `(channel, external_user_id)`, service-role only. Replaces the never-applied `nexus_wa_sessions` | New, 2026-09-30 (`0006_bot_sessions.sql`) — not yet applied, not yet used by any flow |
 | `api/telegram/` | Vercel functions | Project root | Telegram bot backend: `webhook.js` (the only public endpoint, `/api/telegram/webhook`), `_send.js`, `_supabaseAdmin.js`, `_link.js` (TO linking flow) | New, 2026-09-30, replaces `api/whatsapp/` (deleted) — not deployed/tested; bot not yet created |
 | `api/whatsapp/`, `nexus_wa_link_codes`, `nexus_wa_sessions`, `nexus_tos.whatsapp_phone_e164`, `generateWaLinkCode`, `fetchMyWaLinkStatus` | — | — | ~~WhatsApp bot Phase 0~~ | **Deprecated 2026-09-30 → renamed to the Telegram equivalents above** (`generateTelegramLinkCode`, `fetchMyTelegramLink` in `js/auth.js`). Old migrations were applied live by manual paste (never deployed as code); dropped by section 0 of the new `0005_telegram_to_linking.sql` once that's pasted |
+| `nexus_to_members` | DB table | Supabase | Who can act as a TO: owner/admin, own login each, optional Telegram link. `private.current_to_id()` resolves through it | New, 2026-09-30 (`0007_to_members.sql`) — not yet applied. Supersedes `nexus_to_telegram_links` |
+| `nexus_to_invites` | DB table | Supabase | Owner-created single-use 7-day invite codes (admin role) | New, 2026-09-30 (`0007`) — not yet applied |
+| `accept_to_invite(invite_code, member_name)` | DB function (RPC) | Supabase | Web invite acceptance, security definer | New, 2026-09-30 (`0007`) — not yet applied |
+| `private.current_to_role()` | DB function | Supabase | Caller's role in their TO (owner/admin), used in RLS | New, 2026-09-30 (`0007`) — not yet applied |
+| `join.html` | Page | Project root | Accept a TO invite on the web | New, 2026-09-30 — not live-tested |
+| `set-password.html` | Page | Project root | Set website password from the bot's one-time link | New, 2026-09-30 — not live-tested |
+| `nexus_to_telegram_links` | DB table | — | ~~One Telegram per TO~~ | **Deprecated 2026-09-30 → folded into `nexus_to_members.telegram_user_id`** (dropped by `0007`) |
 
 <!-- ADD NEW ROWS AS FUNCTIONS/TABLES/COMPONENTS ARE ACTUALLY BUILT -->
 
@@ -675,7 +705,8 @@ Living list — not a full backlog, just the things a next session should know a
   5. Fill the business details form: enterprise name (anything, e.g. "Metazone"), type = **Proprietorship**, address (home address is fine), bank account + IFSC, NIC code (search by keyword like "software"/"information technology" and pick the closest match), investment/turnover (small numbers → auto-classifies as "Micro," the most lenient tier).
   6. Submit, verify with one more OTP → get a Udyam Registration Number and downloadable Udyam Certificate (PDF with QR code) immediately.
   7. **After that**, separately: go back to Meta Business Settings → Security Center → Start Verification, and submit that certificate as the business proof document — this is what actually lifts the 5-test-number cap. Not done in the same step as Udyam itself.
-- [ ] **Telegram bot go-live setup** (2026-09-30): apply `0005_telegram_to_linking.sql` + `0006_bot_sessions.sql` via the Dashboard SQL Editor; create the bot via @BotFather; set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` in Vercel; run `setWebhook`; replace the `TELEGRAM_BOT_USERNAME` placeholder in `js/auth.js`. Exact steps in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` → "One-time bot setup". Then live-test linking from the dashboard.
+- [ ] **Telegram bot go-live setup** (2026-09-30): apply `0005_telegram_to_linking.sql` + `0006_bot_sessions.sql` + `0007_to_members.sql` (in that order, before pushing the Phase 0.5 code) via the Dashboard SQL Editor; set `TELEGRAM_BOT_USERNAME` in Vercel too; `setWebhook` must allow `callback_query`; create the bot via @BotFather; set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` in Vercel; run `setWebhook`; replace the `TELEGRAM_BOT_USERNAME` placeholder in `js/auth.js`. Exact steps in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` → "One-time bot setup". Then live-test linking from the dashboard.
+- [ ] **Connect a custom email sender (SMTP) in Supabase** (found 2026-09-30). Supabase's built-in sender only delivers to the Supabase project's own team members, max 2 emails/hour — so real TOs signing up (bot *or* website) never receive their code/confirmation email. Fix: Supabase → Authentication → Emails → SMTP Settings, e.g. a Gmail account + app password (`smtp.gmail.com:587`); raise the email rate limit; add `{{ .Token }}` to the Confirm signup and Magic Link templates (the bot asks for that code). Also confirm the live "Confirm email" setting — `config.toml` says `enable_confirmations = false` but it's unverified against the dashboard.
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->
 

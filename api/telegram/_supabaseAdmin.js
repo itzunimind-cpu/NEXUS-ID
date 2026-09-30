@@ -13,5 +13,17 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 // this client, not in the database. Never import this module from anything
 // that ships to the browser.
 export const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
+  auth: { persistSession: false, autoRefreshToken: false },
 });
+
+// A fresh, throwaway client for sending/verifying email codes. verifyOtp()
+// signs the client in as that user, after which its database calls would run
+// as the user (under RLS) instead of as the service role — so never do it on
+// the shared supabaseAdmin client.
+export function createAuthClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+export const SITE_URL = process.env.SITE_URL || "https://nexus-id-mot-i-soft.vercel.app";
