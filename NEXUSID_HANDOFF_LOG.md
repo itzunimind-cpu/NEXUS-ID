@@ -520,6 +520,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — Bot screens update in place
+**Type:** UX
+**What changed:** `api/telegram/webhook.js` collects every reply a flow makes for one update into a single message (texts joined, button rows stacked, duplicate rows dropped). For a button tap, that message replaces the tapped message via `editMessageText` (new `editText` in `_send.js`), falling back to a new message if Telegram refuses the edit. Typed messages still get a new reply, now one instead of several.
+**Why:** Moti: the chat looked "jeggedy" with every tap stacking a new message.
+**Migration/backward-compat notes:** No flow code changed — flows still call `reply()` as before. Pushes to other users (new-application alerts, approval messages) are unchanged.
+
+
 ### 2026-09-30 — Self-registered Nexus IDs from the bot
 **Type:** Schema / New feature
 **What changed:** `0010_self_registered_players.sql`: `created_by_to_id` nullable on `nexus_players`, `nexus_player_game_accounts`, `nexus_ign_links`; `nexus_players.created_via` ('to'/'telegram'); new private `nexus_player_telegram_links` (player ↔ Telegram, one each way). Bot: `api/telegram/_players.js` (find/create/link the applicant's Nexus ID), apply flow asks for the applicant's IGN + UID first (skipped once they have one), applicant is player #1 and only teammates are typed, new "🪪 My Nexus ID" menu item.

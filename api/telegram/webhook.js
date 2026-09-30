@@ -1,6 +1,28 @@
 import crypto from "node:crypto";
 import { handleUpdate } from "./_router.js";
-import { sendText, answerCallback } from "./_send.js";
+import { sendText, editText, answerCallback } from "./_send.js";
+
+// Flows often reply in several parts ("✅ Approved." then the next screen).
+// Collect them and send one message: texts joined, buttons stacked in order.
+function collector() {
+  const parts = [];
+  return {
+    add: async (text, opts) => {
+      parts.push({ text, buttons: opts?.buttons || [] });
+    },
+    combine: () => {
+      if (!parts.length) return null;
+      const seen = new Set();
+      const buttons = parts.flatMap((p) => p.buttons).filter((row) => {
+        const key = JSON.stringify(row);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return { text: parts.map((p) => p.text).join("\n\n"), buttons };
+    },
+  };
+}
 
 // Telegram sends the secret_token given to setWebhook back in this header on
 // every update. Anything without it didn't come from Telegram.
@@ -31,19 +53,24 @@ export default async function handler(req, res) {
     // group member's message as input to their own flow.
     if (message?.chat?.type === "private" && typeof message.text === "string" && message.from) {
       const chatId = message.chat.id;
-      await handleUpdate({
-        telegramUserId: message.from.id,
-        text: message.text,
-        reply: (text, opts) => sendText(chatId, text, opts),
-      });
+      const replies = collector();
+      await handleUpdate({ telegramUserId: message.from.id, text: message.text, reply: replies.add });
+      const combined = replies.combine();
+      if (combined) await sendText(chatId, combined.text, combined);
     } else if (callback?.message?.chat?.type === "private" && callback.from) {
       const chatId = callback.message.chat.id;
       await answerCallback(callback.id);
-      await handleUpdate({
-        telegramUserId: callback.from.id,
-        data: callback.data,
-        reply: (text, opts) => sendText(chatId, text, opts),
-      });
+      const replies = collector();
+      await handleUpdate({ telegramUserId: callback.from.id, data: callback.data, reply: replies.add });
+      const combined = replies.combine();
+      if (combined) {
+        // Turn the tapped message into the next screen, so menus change in
+        // place instead of stacking. Fall back to a new message if Telegram
+        // won't edit it.
+        await editText(chatId, callback.message.message_id, combined.text, combined).catch(() =>
+          sendText(chatId, combined.text, combined)
+        );
+      }
     }
   } catch (err) {
     console.error("Telegram flow error:", err);
