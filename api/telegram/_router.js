@@ -4,6 +4,7 @@ import { findMemberByTelegram } from "./_members.js";
 import { LINK_CODE_PATTERN, redeemLinkCode } from "./_link.js";
 import { startAccountFlow, continueAccountFlow, sendPasswordLink } from "./_account.js";
 import { startFind, handleFindQuery, showOrganiser, showTournament, startApply, continueApply, showMyRegistrations } from "./_apply.js";
+import { describeMyPlayer, profileUrl } from "./_players.js";
 import {
   listMyTournaments,
   showMyTournament,
@@ -20,7 +21,7 @@ const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || "Motisoft_NexusID_bot"
 // Buttons that navigate somewhere new. Tapping one abandons whatever flow was
 // in progress (e.g. an old message's button pressed mid-signup). Everything
 // else a button sends (ns:4, skip, ap_ok, resend...) belongs to the flow.
-const NAVIGATION = /^(find|myreg|mt|nt|members|invite|web_login|become_to|have_to|(to|t|ap|mt|rv):\d+|rg:\d+:[01]|dc:\d+:[ar])$/;
+const NAVIGATION = /^(find|myreg|mynx|mt|nt|members|invite|web_login|become_to|have_to|(to|t|ap|mt|rv):\d+|rg:\d+:[01]|dc:\d+:[ar])$/;
 
 // Entry point for every private-chat message or button tap. `text` is set
 // for typed messages, `data` for button taps (callback_data).
@@ -89,6 +90,7 @@ async function navigate({ telegramUserId, data, reply }) {
   if (action === "t") return showTournament({ tournamentId: id, reply });
   if (action === "ap") return startApply({ telegramUserId, tournamentId: id, reply });
   if (action === "myreg") return showMyRegistrations({ telegramUserId, reply });
+  if (action === "mynx") return showMyNexusId({ telegramUserId, reply });
 
   const member = await findMemberByTelegram(telegramUserId);
   if (!member) {
@@ -116,7 +118,7 @@ async function showMenu({ telegramUserId, reply, member }) {
   const current = member === undefined ? await findMemberByTelegram(telegramUserId) : member;
   const playerRows = [
     [{ text: "🔍 Find a TO", data: "find" }],
-    [{ text: "📋 My registrations", data: "myreg" }],
+    [{ text: "📋 My registrations", data: "myreg" }, { text: "🪪 My Nexus ID", data: "mynx" }],
   ];
 
   if (!current) {
@@ -138,6 +140,20 @@ async function showMenu({ telegramUserId, reply, member }) {
   rows.push([{ text: "🌐 Website login", data: "web_login" }], ...playerRows);
   await reply(`${current.nexus_tos.organisation_name} (${current.nexus_tos.to_id})\nYou: ${current.display_name} · ${current.role}`, {
     buttons: rows,
+  });
+}
+
+async function showMyNexusId({ telegramUserId, reply }) {
+  const mine = await describeMyPlayer(telegramUserId);
+  if (!mine) {
+    await reply("You don't have a Nexus ID yet. You'll get one the first time you apply to a tournament — find one under \"Find a TO\".", {
+      buttons: [[{ text: "🔍 Find a TO", data: "find" }], [{ text: "Back", data: "menu" }]],
+    });
+    return;
+  }
+  const games = mine.accounts.map((a) => `${a.game}: ${a.in_game_name} — ${a.in_game_uid}`).join("\n");
+  await reply(`🪪 ${mine.nxId}\n${games}\n\nYour profile: ${profileUrl(mine.nxId)}`, {
+    buttons: [[{ text: "Back", data: "menu" }]],
   });
 }
 

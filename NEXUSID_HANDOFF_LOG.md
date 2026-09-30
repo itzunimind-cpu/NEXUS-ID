@@ -322,6 +322,13 @@ Format: **Decision → Reasoning → Reversible?**
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-09-30 — The bot applicant must have their own Nexus ID; they're always player #1
+**Decision:** Whoever applies to a tournament from the bot must give their own IGN + UID and gets a Nexus ID (self-created, no TO involved), and is automatically player #1 on the roster. Teammates' UIDs stay optional. If the applicant's UID already has a Nexus ID that no Telegram account is linked to (e.g. a TO created it on the web), the bot links it instead of creating a duplicate; if it's linked to someone else's Telegram, the bot refuses.
+**Reasoning:** Moti: makes every bot user a tracked player from their first application — the adoption hook. Moti chose "always a player" over asking each time.
+**Reversible?** Yes. Known risk, accepted as the product's existing low-trust tier: someone who knows another player's UID could link a web-created, unlinked Nexus ID to their own Telegram first. The link is not a "claim" (`claimed` stays false) and gives no edit rights; if it's abused, add a TO-confirmed or OTP claim step.
+**Supersedes:** Refines the 2026-09-30 bot-first decision "players never need a phone number or Telegram" (teammates still don't; the applicant now does). First time a Nexus ID can exist without a creating TO — refines 2026-09-05 "a TO creates Player IDs on players' behalf".
+
+
 ### 2026-09-30 — A registered player's UID is optional
 **Decision:** When applying, a captain may list a teammate by name only. The player counts toward the team; with no UID nothing can ever link their results to a Nexus ID, so no history is kept for them. UIDs are still stored whenever given.
 **Reasoning:** Moti, after live-testing step 2: captains often won't know every teammate's UID, and the bot is meant to lower the barrier to entry. The bot says plainly on the confirm screen and after submitting which players will have no history.
@@ -512,6 +519,13 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 ```
 
 <!-- ADD NEW ENTRIES BELOW, NEWEST FIRST -->
+
+### 2026-09-30 — Self-registered Nexus IDs from the bot
+**Type:** Schema / New feature
+**What changed:** `0010_self_registered_players.sql`: `created_by_to_id` nullable on `nexus_players`, `nexus_player_game_accounts`, `nexus_ign_links`; `nexus_players.created_via` ('to'/'telegram'); new private `nexus_player_telegram_links` (player ↔ Telegram, one each way). Bot: `api/telegram/_players.js` (find/create/link the applicant's Nexus ID), apply flow asks for the applicant's IGN + UID first (skipped once they have one), applicant is player #1 and only teammates are typed, new "🪪 My Nexus ID" menu item.
+**Why:** See Decision Log, same day.
+**Migration/backward-compat notes:** 0001 RLS unchanged — a NULL `created_by_to_id` matches no TO, so self-registered players can't be edited from the web. Planned migration numbers shift again: guest participations → `0011`, payment status → `0012`. `0009` + `0010` applied by Moti 2026-09-30 before this was pushed.
+
 
 ### 2026-09-30 — Optional player UID on registrations
 **Type:** Schema / Behaviour change
@@ -705,6 +719,8 @@ Tracks concrete changes to the data model, function names, file structure, or sh
 | `nexus_tournament_registrations` | DB table | Supabase | Tournament applications (named team, status pending/approved/rejected, applicant's Telegram id) | New, 2026-09-30 (`0008`) — applied 2026-09-30 via manual Dashboard SQL Editor paste |
 | `nexus_tournament_registration_members` | DB table | Supabase | Players on each application: IGN + BGMI UID always, `player_id` if they have a Nexus ID | New, 2026-09-30 (`0008`) — applied 2026-09-30 via manual Dashboard SQL Editor paste |
 | `api/registrations/decide.js` | Vercel function | Project root | Website approve/reject endpoint (Bearer Supabase token), sends the applicant's Telegram message | New, 2026-09-30 — deployed (`9c1b629`), not live-tested |
+| `nexus_player_telegram_links` | DB table | Supabase | Which Telegram account a Nexus ID belongs to (bot self-registration). Service role only | New, 2026-09-30 (`0010`) — applied 2026-09-30 via manual Dashboard SQL Editor paste |
+| `api/telegram/_players.js` | Vercel helper | Project root | `findMyPlayer`, `registerMyPlayer`, `describeMyPlayer`, `profileUrl` — the applicant's own Nexus ID | New, 2026-09-30 |
 
 <!-- ADD NEW ROWS AS FUNCTIONS/TABLES/COMPONENTS ARE ACTUALLY BUILT -->
 
@@ -765,7 +781,8 @@ Living list — not a full backlog, just the things a next session should know a
 - [ ] **Telegram bot go-live setup** (2026-09-30): ~~apply `0005`/`0006`/`0007`~~ — **done 2026-09-30** (Moti pasted all three in order; Phase 0.5 code pushed afterwards, `5686923`). Still to do: ~~create the bot via @BotFather~~ — **done 2026-09-30: @Motisoft_NexusID_bot**, username set in `js/auth.js` and `_router.js`. ~~Vercel env vars~~ — **done 2026-09-30** (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_BOT_USERNAME` added; `SUPABASE_SERVICE_ROLE_KEY` already existed from the Sep 5 Vercel↔Supabase integration, pointing at `jzqmscrmeywckzodgjre`). setWebhook first pointed at `mot-i-soft` → Telegram got 401 (Vercel login); re-pointed at `nexus-id-omega.vercel.app` (URL-encoded `url=` param — the plain form got "invalid webhook URL" once, likely a copy/paste artifact). **Bot answered `/start` with the welcome menu, 2026-09-30 — webhook, secret check, Supabase session read all working live.** **Become a TO live-tested by Moti 2026-09-30:** email code → TO created → set-password link opened `set-password.html` on omega (first attempt landed on the mot-i-soft home page until the live Supabase Site URL/Redirect URLs were switched to omega). Dashboard Members card showed Moti as owner, and email + password login worked. Remaining live tests: invites (bot + web) and website Connect Telegram. Exact steps in `NEXUSID_TELEGRAM_INTEGRATION_PLAN.md` → "One-time bot setup". Then live-test linking from the dashboard.
 - [x] **Custom email sender (SMTP) connected in Supabase** — done 2026-09-30 by Moti: a dedicated Gmail account via app password (`smtp.gmail.com:587`), email rate limit raised to ~30/hour, `{{ .Token }}` added to the Confirm signup and Magic Link templates (link kept too). Live "Confirm email" setting confirmed **on**; `supabase/config.toml` `[auth.email] enable_confirmations` updated to `true` to match. Found because Supabase's built-in sender only emails the project's own team members, 2/hour. Gmail's own cap is ~500/day — revisit if signups outgrow that.
 - [x] **Step 2 live test** — Moti: "all good" (2026-09-30).
-- [ ] **Apply `0009_optional_player_uid.sql`, then push** (2026-09-30) — name-only players; the code is committed locally.
+- [x] **`0009_optional_player_uid.sql` + `0010_self_registered_players.sql` applied** by Moti 2026-09-30, then pushed.
+- [ ] Live-test the applicant Nexus ID flow: apply from a Telegram account with no Nexus ID → IGN + UID → NX ID shown → teammates (some name-only) → approve → "🪪 My Nexus ID".
 - [ ] ~~Step 2 live test~~ (2026-09-30, superseded by the line above) — ~~apply `0008`, then push~~ **done: Moti applied `0008`, then `9c1b629` was pushed.** Still to do: live-test with two Telegram accounts: TO creates + opens a tournament, the other finds and applies, TO approves (bot and website).
 
 <!-- Move items here from Session Log "not finished" notes; check off and move to Change Log once done -->

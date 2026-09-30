@@ -1,15 +1,20 @@
 import { supabaseAdmin } from "./_supabaseAdmin.js";
 import { setSession, clearSession } from "./_session.js";
 import { notifyToOfApplication } from "./_registrations.js";
+import { findMyPlayer, registerMyPlayer, profileUrl } from "./_players.js";
 
-// The public side of the bot — no Nexus ID or TO account needed:
+// The public side of the bot — no TO account needed:
 // Find a TO → their open tournaments → Apply → My registrations.
+// Whoever applies must have their own Nexus ID (created here from their IGN
+// + UID if they don't) and is always player #1; teammates' UIDs are optional.
 //
 // Session state:
 //   { flow: "find" }                                   waiting for a search query
-//   { flow: "apply", tournamentId, step: "team" }      waiting for a team name
-//   { flow: "apply", tournamentId, step: "players", teamName }
-//   { flow: "apply", tournamentId, step: "confirm", teamName, players }
+//   { flow: "apply", tournamentId, step: "me" }        waiting for the applicant's IGN + UID
+//   { flow: "apply", tournamentId, step: "team", me }  waiting for a team name
+//   { flow: "apply", tournamentId, step: "players", me, teamName }
+//   { flow: "apply", tournamentId, step: "confirm", me, teamName, players }
+// `me` = { playerId, nxId, ign, uid }.
 
 const CANCEL_BUTTON = { text: "Cancel", data: "cancel" };
 const TEAM_SIZE_LABEL = { 1: "Solo", 2: "Duo", 4: "Squad" };
@@ -135,21 +140,40 @@ export async function startApply({ telegramUserId, tournamentId, reply }) {
     return;
   }
 
-  if (t.team_size === 1) {
-    await setSession(telegramUserId, { flow: "apply", tournamentId: t.id, step: "players" });
-    await reply(`Applying to ${t.name} (solo).\n\nSend your in-game name and BGMI UID, like:\nMortal - 5123456789`, {
-      buttons: [[CANCEL_BUTTON]],
-    });
+  const me = await findMyPlayer(telegramUserId, t.game);
+  if (!me) {
+    await setSession(telegramUserId, { flow: "apply", tournamentId: t.id, step: "me" });
+    await reply(
+      `Applying to ${t.name}.\n\nFirst, your own player ID. Send your in-game name and ${t.game} UID, like:\nMortal - 5123456789\n\nThis creates your Nexus ID, so your results are saved to your profile. You'll be player 1 on your team.`,
+      { buttons: [[CANCEL_BUTTON]] }
+    );
     return;
   }
-  await setSession(telegramUserId, { flow: "apply", tournamentId: t.id, step: "team" });
-  await reply(`Applying to ${t.name}.\n\nWhat's your team name?`, { buttons: [[CANCEL_BUTTON]] });
+  await reply(`Applying to ${t.name} as ${me.ign} (${me.nxId}).`);
+  return askForTeam({ telegramUserId, t, me, reply });
+}
+
+// After the applicant's own Nexus ID is known: solo goes straight to the
+// confirm screen, teams are asked for a name.
+async function askForTeam({ telegramUserId, t, me, reply }) {
+  if (t.team_size === 1) {
+    return showConfirm({ telegramUserId, t, state: { flow: "apply", tournamentId: t.id, me }, teamName: me.ign, players: [meAsPlayer(me)], reply });
+  }
+  await setSession(telegramUserId, { flow: "apply", tournamentId: t.id, step: "team", me });
+  await reply("What's your team name?", { buttons: [[CANCEL_BUTTON]] });
+  return false;
+}
+
+function meAsPlayer(me) {
+  return { ign: me.ign, uid: me.uid, isMe: true };
 }
 
 function playersPrompt(teamSize) {
   const { min, max } = playerLimits(teamSize);
-  const count = min === max ? `${min}` : `${min} to ${max} (subs included)`;
-  return `Send your ${count} players, one per line — in-game name, then BGMI UID:\n\nMortal - 5123456789\nScout - 5234567890\nViper\n\nThe UID is optional (like Viper above), but without it that player's results aren't saved to their history. Players don't need a Nexus ID.`;
+  const lo = min - 1;
+  const hi = max - 1;
+  const count = lo === hi ? `${lo} teammate${lo === 1 ? "" : "s"}` : `${lo} to ${hi} teammates (subs included)`;
+  return `You're player 1. Send your ${count}, one per line — in-game name, then UID:\n\nScout - 5234567890\nViper\n\nThe UID is optional (like Viper above), but without it that player's results aren't saved to their history.`;
 }
 
 // One line → { ign, uid } (uid null for a name-only player), or null if
@@ -165,7 +189,17 @@ function parsePlayerLine(line) {
 }
 
 function rosterText(players) {
-  return players.map((p, i) => `${i + 1}. ${p.ign} — ${p.uid ?? "no UID (no history)"}`).join("\n");
+  return players
+    .map((p, i) => `${i + 1}. ${p.ign} — ${p.uid ?? "no UID (no history)"}${p.isMe ? " (you)" : ""}`)
+    .join("\n");
+}
+
+async function showConfirm({ telegramUserId, t, state, teamName, players, reply }) {
+  await setSession(telegramUserId, { ...state, step: "confirm", teamName, players });
+  await reply(`Check your application for ${t.name}:\n\n${t.team_size === 1 ? "" : `Team: ${teamName}\n`}${rosterText(players)}`, {
+    buttons: [[{ text: "✅ Submit", data: "ap_ok" }, { text: "✏️ Start over", data: `ap:${t.id}` }], [CANCEL_BUTTON]],
+  });
+  return false;
 }
 
 export async function continueApply({ telegramUserId, state, text, data, reply }) {
@@ -174,6 +208,28 @@ export async function continueApply({ telegramUserId, state, text, data, reply }
     await clearSession(telegramUserId);
     await reply("Registrations for this tournament just closed.");
     return true;
+  }
+
+  if (state.step === "me") {
+    const parsed = parsePlayerLine((text || "").trim());
+    if (!parsed?.uid) {
+      await reply(`Send your in-game name and ${t.game} UID on one line, like:\nMortal - 5123456789\n\nYour own UID is required — it's what your Nexus ID is built on.`, {
+        buttons: [[CANCEL_BUTTON]],
+      });
+      return false;
+    }
+    const result = await registerMyPlayer({ telegramUserId, game: t.game, ign: parsed.ign, uid: parsed.uid });
+    if (!result.ok) {
+      await reply(result.message, { buttons: [[CANCEL_BUTTON]] });
+      return false;
+    }
+    const { me } = result;
+    await reply(
+      result.created
+        ? `🪪 Your Nexus ID is ${me.nxId}. Your tournament results will build up here:\n${profileUrl(me.nxId)}`
+        : `🪪 Found your Nexus ID: ${me.nxId} (${me.ign}).`
+    );
+    return askForTeam({ telegramUserId, t, me, reply });
   }
 
   if (state.step === "team") {
@@ -189,32 +245,28 @@ export async function continueApply({ telegramUserId, state, text, data, reply }
 
   if (state.step === "players") {
     const lines = (text || "").split("\n").map((l) => l.trim()).filter(Boolean);
-    const players = [];
+    const teammates = [];
     const bad = [];
     for (const line of lines) {
       const player = parsePlayerLine(line);
-      if (player) players.push(player);
+      if (player) teammates.push(player);
       else bad.push(line);
     }
+    const players = [meAsPlayer(state.me), ...teammates];
     const { min, max } = playerLimits(t.team_size);
     const withUid = players.filter((p) => p.uid);
     const names = new Set(players.map((p) => p.ign.toLowerCase()));
     let problem = null;
     if (bad.length) problem = `I couldn't read: "${bad[0]}". Each line needs a name (up to 40 characters), optionally followed by a UID.`;
-    else if (players.length < min || players.length > max) problem = `This tournament needs ${min === max ? min : `${min} to ${max}`} player${max === 1 ? "" : "s"} — you sent ${players.length}.`;
-    else if (new Set(withUid.map((p) => p.uid)).size !== withUid.length) problem = "The same UID appears twice.";
-    else if (names.size !== players.length) problem = "The same player name appears twice.";
+    else if (players.length < min || players.length > max) {
+      problem = `You need ${min - 1 === max - 1 ? min - 1 : `${min - 1} to ${max - 1}`} teammates — you sent ${teammates.length}.`;
+    } else if (new Set(withUid.map((p) => p.uid)).size !== withUid.length) problem = "The same UID appears twice (yours is already player 1).";
+    else if (names.size !== players.length) problem = "The same player name appears twice (you're already player 1).";
     if (problem) {
       await reply(`${problem}\n\n${playersPrompt(t.team_size)}`, { buttons: [[CANCEL_BUTTON]] });
       return false;
     }
-
-    const teamName = t.team_size === 1 ? players[0].ign : state.teamName;
-    await setSession(telegramUserId, { ...state, step: "confirm", teamName, players });
-    await reply(`Check your application for ${t.name}:\n\n${t.team_size === 1 ? "" : `Team: ${teamName}\n`}${rosterText(players)}`, {
-      buttons: [[{ text: "✅ Submit", data: "ap_ok" }, { text: "✏️ Start over", data: `ap:${t.id}` }], [CANCEL_BUTTON]],
-    });
-    return false;
+    return showConfirm({ telegramUserId, t, state, teamName: state.teamName, players, reply });
   }
 
   if (state.step === "confirm" && data === "ap_ok") {
